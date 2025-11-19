@@ -1,0 +1,129 @@
+<%- include('partials/header') %>
+
+<!-- HERO SECTION -->
+<section class="py-5" style="background: linear-gradient(180deg, #f6fbff 0%, #ffffff 100%);">
+  <div class="container py-4">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <h1 class="fw-bold text-primary mb-3" style="font-size: 2.4rem;">
+          Đặt phòng nhanh – đẹp – minh bạch
+        </h1>
+        <p class="text-muted mb-4">
+          Chọn ngày, lọc theo tên phòng/giá/địa điểm và đặt ngay. Giá hiển thị rõ ràng, xác nhận tức thì.
+        </p>
+
+        <!-- FORM TÌM KIẾM -->
+        <form action="/search" method="get" class="row gy-2 gx-2 bg-white shadow-sm rounded-4 p-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label small text-muted">Từ khóa (tên/mã/loại/địa điểm)</label>
+            <input class="form-control" type="text" name="q" placeholder="Deluxe, D101, Hà Nội...">
+          </div>
+
+          <!-- DROPDOWN LOẠI PHÒNG -->
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Loại phòng</label>
+            <select class="form-select" name="type">
+              <option value="">Tất cả loại phòng</option>
+              <option value="Standard">Standard</option>
+              <option value="Superior">Superior</option>
+              <option value="Deluxe" selected>Deluxe</option>
+              <option value="Suite">Suite</option>
+            </select>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Địa điểm</label>
+            <input class="form-control" type="text" name="location" placeholder="Hà Nội">
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Giá từ</label>
+            <input class="form-control" type="number" min="0" name="minPrice" placeholder="500000">
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Giá đến</label>
+            <input class="form-control" type="number" min="0" name="maxPrice" placeholder="2000000">
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Nhận phòng</label>
+            <input class="form-control" type="date" name="checkIn" id="checkIn">
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Trả phòng</label>
+            <input class="form-control" type="date" name="checkOut" id="checkOut">
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Sắp xếp</label>
+            <select class="form-select" name="sort">
+              <option value="price_asc">Giá tăng dần</option>
+              <option value="price_desc">Giá giảm dần</option>
+              <option value="name_asc">Tên A → Z</option>
+              <option value="name_desc">Tên Z → A</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-3 d-grid align-self-end">
+            <button class="btn btn-info text-white fw-semibold" type="submit">Tìm phòng</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ẢNH BÊN PHẢI -->
+      <div class="col-lg-6 text-center">
+        <div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width: 400px;">
+          <img src="/images/banner-hotel.jpg" class="card-img-top rounded-4" alt="Banner khách sạn"
+               onerror="this.src='/images/room1.jpeg'">
+          <div class="card-body text-center py-3">
+            <p class="text-secondary mb-0">Ưu đãi 30% cho thành viên mới</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KHÁM PHÁ THEO ĐỊA ĐIỂM -->
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="fw-bold text-primary mb-0">Khám phá theo địa điểm: <span id="cityName">Hà Nội</span></h4>
+      <div class="btn-group" role="group">
+        <button class="btn btn-outline-info btn-sm active" data-city="Hà Nội">Hà Nội</button>
+        <button class="btn btn-outline-info btn-sm" data-city="Đà Nẵng">Đà Nẵng</button>
+        <button class="btn btn-outline-info btn-sm" data-city="TP.HCM">TP.HCM</button>
+        <button class="btn btn-outline-info btn-sm" data-city="Phú Quốc">Phú Quốc</button>
+      </div>
+    </div>
+
+    <div class="city-images">
+      <img id="cityImage" src="/images/001.jpg" alt="Ảnh khách sạn" class="img-fluid rounded-4 shadow-sm">
+    </div>
+  </div>
+</section>
+
+<script>
+  // Chuyển ảnh theo địa điểm
+  document.querySelectorAll('[data-city]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-city]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const city = btn.dataset.city;
+      document.getElementById('cityName').innerText = city;
+
+      const img = document.getElementById('cityImage');
+      switch (city) {
+        case 'Hà Nội': img.src = '/images/001.jpg'; break;
+        case 'Đà Nẵng': img.src = '/images/002.jpg'; break;
+        case 'TP.HCM': img.src = '/images/005.jpg'; break;
+        case 'Phú Quốc': img.src = '/images/006.jpg'; break;
+      }
+    });
+  });
+</script>
+
+<%- include('partials/footer') %>

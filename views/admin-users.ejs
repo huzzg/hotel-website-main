@@ -1,0 +1,51 @@
+<%- include('partials/header') %>
+
+<div class="container my-4">
+  <ul class="nav nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link" href="/admin/dashboard">Tổng quan</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/rooms">Phòng</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/bookings">Đơn đặt</a></li>
+    <li class="nav-item"><a class="nav-link active" href="/admin/users">Khách hàng</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/discounts">Mã giảm giá</a></li>
+  </ul>
+
+  <div class="card p-3 border-0 shadow-sm rounded-4">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+        <tr>
+          <th>#</th><th>Tài khoản</th><th>Email</th><th>Họ tên</th><th>SĐT</th><th>Role</th><th>Trạng thái</th><th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <% users.forEach((u,i)=>{ %>
+          <tr>
+            <td><%= i+1 %></td>
+            <td><%= u.username %></td>
+            <td><%= u.email %></td>
+            <td><%= u.profile?.name || '' %></td>
+            <td><%= u.profile?.phone || '' %></td>
+            <td><span class="badge bg-info text-dark"><%= u.role || 'user' %></span></td>
+            <td>
+              <span class="badge bg-<%= u.active===false?'secondary':'success' %>">
+                <%= u.active===false?'blocked':'active' %>
+              </span>
+            </td>
+            <td class="text-end">
+              <% if (u.role !== 'admin') { %>
+              <form action="/admin/users/<%= u._id %>/toggle" method="post">
+                <button class="btn btn-sm btn-outline-warning">
+                  <%= u.active===false?'Bỏ chặn':'Chặn' %>
+                </button>
+              </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

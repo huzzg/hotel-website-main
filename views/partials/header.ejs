@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= typeof title !== 'undefined' ? title : 'Khách sạn Phenikaa' %></title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background:#f7fafc; }
+    .topbar {
+      background:#06c8f0;
+      padding:10px 0;
+      box-shadow:0 3px 8px rgba(0,0,0,.06);
+      z-index: 9999;
+      position: relative;
+    }
+    .brand { font-weight:700; color:#fff !important; text-decoration:none; }
+    .nav-link.text-white { color:#fff !important; font-weight:500; }
+    .dropdown-menu { z-index:999999; }
+    .dropdown-menu.show { display:block !important; }
+    .nav-auth-links .nav-link { margin-left: .6rem; background: rgba(255,255,255,0.06); padding: .35rem .6rem; border-radius:6px; color: #fff; }
+    .nav-auth-links .nav-link:hover { background: rgba(255,255,255,0.12); color:#fff; }
+  </style>
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg topbar">
+  <div class="container">
+    <a class="navbar-brand brand" href="/">KHÁCH SẠN PHENIKAA</a>
+
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+      <span class="navbar-toggler-icon" style="filter:invert(1)"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNav">
+
+      <!-- ĐẨY MENU SANG BÊN PHẢI -->
+      <ul class="navbar-nav ms-auto align-items-center">
+
+        <% if (!currentUser || currentUser.role !== 'admin') { %>
+          <li class="nav-item"><a class="nav-link text-white" href="/">Trang chủ</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="/search">Tìm kiếm</a></li>
+        <% } %>
+
+        <% if (currentUser) { %>
+          <!-- Đã đăng nhập: hiện dropdown user/admin -->
+          <li class="nav-item dropdown ms-3">
+            <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button">
+              <%= currentUser.username || currentUser.name || "Tài khoản" %>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end mt-2">
+              <li><a class="dropdown-item" href="/user/profile">Hồ sơ</a></li>
+              <% if (currentUser.role === 'admin') { %>
+                <li><a class="dropdown-item" href="/admin/dashboard">Trang quản trị</a></li>
+              <% } %>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="/auth/logout">Đăng xuất</a></li>
+            </ul>
+          </li>
+
+        <% } else { %>
+          <!-- Chưa đăng nhập: hiện 2 link riêng (không trong dropdown) -->
+          <li class="nav-item nav-auth-links ms-3 d-flex align-items-center">
+            <a class="nav-link" href="/auth/login">Đăng nhập</a>
+            <a class="nav-link" href="/auth/register">Đăng ký</a>
+          </li>
+        <% } %>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<script>
+  // Toggle dropdown thủ công (không phụ thuộc vào Bootstrap JS)
+  document.addEventListener("click", function(e) {
+    const toggle = e.target.closest('.dropdown-toggle');
+    // close any opened dropdowns
+    document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+    if (toggle) {
+      e.preventDefault();
+      const menu = toggle.parentElement.querySelector(".dropdown-menu");
+      if (menu) menu.classList.toggle("show");
+    }
+  });
+</script>

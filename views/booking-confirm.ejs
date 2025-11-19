@@ -1,0 +1,41 @@
+<!-- views/booking-confirm.ejs -->
+<%- include('partials/header') %>
+<div class="container mt-5 pt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h4>Xác Nhận Đặt Phòng</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Phòng:</strong> <%= booking.roomId.roomNumber %> - <%= booking.roomId.type %></p>
+              <p><strong>Địa điểm:</strong> <%= booking.roomId.location %></p>
+              <p><strong>Check-in:</strong> <%= new Date(booking.checkIn).toLocaleDateString('vi-VN') %></p>
+              <p><strong>Check-out:</strong> <%= new Date(booking.checkOut).toLocaleDateString('vi-VN') %></p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Số đêm:</strong> <%= Math.round((new Date(booking.checkOut) - new Date(booking.checkIn)) / (1000*60*60*24)) %></p>
+              <p><strong>Giá gốc:</strong> <%= (booking.totalPrice + (booking.discountApplied || 0)).toFixed(2) %>$</p>
+              <% if (booking.discountApplied) { %>
+                <p class="text-success"><strong>Giảm giá:</strong> -<%= booking.discountApplied.toFixed(2) %>$</p>
+              <% } %>
+              <h4 class="text-danger"><strong>Tổng cộng: <%= booking.totalPrice.toFixed(2) %>$</strong></h4>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="text-center">
+            <form action="/user/pay/<%= booking._id %>" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-success btn-lg">Thanh Toán Ngay</button>
+            </form>
+            <a href="/user/rooms" class="btn btn-secondary btn-lg">Hủy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

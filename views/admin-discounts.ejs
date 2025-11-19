@@ -1,0 +1,122 @@
+<%- include('partials/header') %>
+
+<div class="container my-4">
+  <ul class="nav nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link" href="/admin/dashboard">Tổng quan</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/rooms">Phòng</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/bookings">Đơn đặt</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/users">Khách hàng</a></li>
+    <li class="nav-item"><a class="nav-link active" href="/admin/discounts">Mã giảm giá</a></li>
+  </ul>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Mã giảm giá</h4>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDiscount">+ Thêm mã</button>
+  </div>
+
+  <div class="card p-3 border-0 shadow-sm rounded-4">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+        <tr>
+          <th>#</th><th>Mã</th><th>%</th><th>Hiệu lực</th><th>Trạng thái</th><th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <% discounts.forEach((d,i)=>{ %>
+          <tr>
+            <td><%= i+1 %></td>
+            <td class="fw-semibold"><%= d.code %></td>
+            <td><%= d.percent %>%</td>
+            <td class="small">
+              <%= d.startDate? new Date(d.startDate).toLocaleDateString('vi-VN'): '-' %> →
+              <%= d.endDate? new Date(d.endDate).toLocaleDateString('vi-VN')  : '-' %>
+            </td>
+            <td><span class="badge bg-<%= d.active?'success':'secondary' %>"><%= d.active?'active':'inactive' %></span></td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-<%= d._id %>">Sửa</button>
+              <form class="d-inline" action="/admin/discounts/<%= d._id %>/delete" method="post" onsubmit="return confirm('Xoá mã này?')">
+                <button class="btn btn-sm btn-outline-danger">Xoá</button>
+              </form>
+            </td>
+          </tr>
+
+          <!-- Edit modal -->
+          <div class="modal fade" id="edit-<%= d._id %>" tabindex="-1">
+            <div class="modal-dialog">
+              <form class="modal-content" action="/admin/discounts/<%= d._id %>" method="post">
+                <div class="modal-header"><h5 class="modal-title">Sửa mã</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body row g-2">
+                  <div class="col-6">
+                    <label class="form-label">Mã</label>
+                    <input name="code" class="form-control" value="<%= d.code %>" required>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">Phần trăm</label>
+                    <input name="percent" type="number" min="1" max="100" class="form-control" value="<%= d.percent %>" required>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">Từ ngày</label>
+                    <input name="startDate" type="date" class="form-control"
+                           value="<%= d.startDate ? new Date(d.startDate).toISOString().slice(0,10): '' %>">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">Đến ngày</label>
+                    <input name="endDate" type="date" class="form-control"
+                           value="<%= d.endDate ? new Date(d.endDate).toISOString().slice(0,10): '' %>">
+                  </div>
+                  <div class="col-12 form-check">
+                    <input id="active-<%= d._id %>" type="checkbox" class="form-check-input" name="active" <%= d.active?'checked':'' %>>
+                    <label class="form-check-label" for="active-<%= d._id %>">Kích hoạt</label>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                  <button class="btn btn-primary">Lưu</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add modal -->
+<div class="modal fade" id="addDiscount" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" action="/admin/discounts" method="post">
+      <div class="modal-header"><h5 class="modal-title">Thêm mã</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body row g-2">
+        <div class="col-6">
+          <label class="form-label">Mã</label>
+          <input name="code" class="form-control" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Phần trăm</label>
+          <input name="percent" type="number" min="1" max="100" class="form-control" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Từ ngày</label>
+          <input name="startDate" type="date" class="form-control">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Đến ngày</label>
+          <input name="endDate" type="date" class="form-control">
+        </div>
+        <div class="col-12 form-check">
+          <input id="active-new" type="checkbox" class="form-check-input" name="active" checked>
+          <label class="form-check-label" for="active-new">Kích hoạt</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+        <button class="btn btn-primary">Thêm</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

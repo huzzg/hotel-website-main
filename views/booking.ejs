@@ -1,0 +1,35 @@
+<!-- views/booking.ejs -->
+<%- include('partials/header') %>
+<div class="container mt-5 pt-5">
+  <h2>Đặt Phòng</h2>
+  <div class="row">
+    <% rooms.forEach(room => { %>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Phòng <%= room.roomNumber %> - <%= room.type %></h5>
+            <p><strong>Giá:</strong> <%= room.price %>$/đêm</p>
+            <p><strong>Địa điểm:</strong> <%= room.location %></p>
+            <form action="/user/book" method="POST">
+              <input type="hidden" name="roomId" value="<%= room._id %>">
+              <div class="mb-2">
+                <label>Check-in</label>
+                <input type="date" name="checkIn" class="form-control" required>
+              </div>
+              <div class="mb-2">
+                <label>Check-out</label>
+                <input type="date" name="checkOut" class="form-control" required>
+              </div>
+              <div class="mb-2">
+                <label>Mã giảm giá</label>
+                <input type="text" name="discountCode" class="form-control" placeholder="VD: SALE10">
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Đặt ngay</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include('partials/footer') %>

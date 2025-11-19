@@ -1,0 +1,61 @@
+<%- include('partials/header') %>
+
+<section class="py-4" style="background:#f6f9ff; min-height: calc(100vh - 72px);">
+  <div class="container">
+    <h1 class="h4 fw-bold text-primary mb-3">Lịch sử đặt phòng</h1>
+
+    <% if (typeof note !== 'undefined' && note) { %>
+      <div class="alert alert-info"><%= note %></div>
+    <% } %>
+
+    <% if (!bookings || bookings.length === 0) { %>
+      <div class="bg-white rounded-4 shadow-sm p-4 text-muted">
+        Bạn chưa có đặt phòng nào.
+      </div>
+    <% } else { %>
+      <div class="row g-4">
+        <% bookings.forEach(b => { %>
+          <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+              <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <div class="fw-semibold">Mã đặt: <%= b.code %></div>
+                  <span class="badge
+                        <%= b.status==='paid' || b.status==='confirmed' ? 'bg-success-subtle text-success'
+                           : b.status==='cancelled' ? 'bg-secondary'
+                           : 'bg-warning-subtle text-warning' %>">
+                    <%= b.status %>
+                  </span>
+                </div>
+                <div class="small text-muted mb-2"><%= b.location || '—' %></div>
+
+                <div class="mb-2">
+                  <div class="fw-bold"><%= b.roomName %></div>
+                  <div class="small text-muted">
+                    Nhận phòng: <%= new Date(b.checkIn).toLocaleDateString() %> —
+                    Trả phòng: <%= new Date(b.checkOut).toLocaleDateString() %>
+                  </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="small text-muted">Giá / đêm</span>
+                  <span class="fw-semibold text-info"><%= (b.price||0).toLocaleString() %>₫</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="small text-muted">Tổng tiền</span>
+                  <span class="fw-bold"><%= (b.totalPrice||0).toLocaleString() %>₫</span>
+                </div>
+              </div>
+              <div class="card-footer bg-white border-0 d-flex justify-content-between">
+                <span class="small text-muted">Tạo lúc: <%= new Date(b.createdAt).toLocaleString() %></span>
+                <a class="btn btn-sm btn-outline-primary" href="/user/booking/<%= b._id %>">Xem chi tiết</a>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

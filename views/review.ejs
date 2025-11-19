@@ -1,0 +1,47 @@
+<%- include('partials/header') %>
+<style>
+  .review-container { max-width: 600px; margin: 50px auto; }
+  .review-form { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: slideUp 1s ease-out; }
+  .modal-content { border-radius: 15px; }
+  @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+<div class="review-container">
+  <h2 class="text-center mb-4">Đánh Giá Phòng</h2>
+  <button type="button" class="btn btn-hotel w-100" data-bs-toggle="modal" data-bs-target="#reviewModal">
+    Thêm Đánh Giá
+  </button>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reviewModalLabel">Gửi Đánh Giá</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form action="/user/review" method="POST">
+          <div class="mb-3">
+            <label for="roomId" class="form-label">Phòng</label>
+            <select name="roomId" id="roomId" class="form-select form-select-lg" required>
+              <% rooms.forEach(room => { %>
+                <option value="<%= room._id %>"><%= room.type %> - <%= room.roomNumber %> (<%= room.location %>)</option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="rating" class="form-label">Đánh Giá (1-5)</label>
+            <input type="number" name="rating" id="rating" class="form-control form-control-lg" min="1" max="5" required>
+          </div>
+          <div class="mb-3">
+            <label for="comment" class="form-label">Bình Luận</label>
+            <textarea name="comment" id="comment" class="form-control form-control-lg" rows="3"></textarea>
+          </div>
+          <button type="submit" class="btn btn-hotel w-100">Gửi</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

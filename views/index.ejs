@@ -1,0 +1,287 @@
+<%- include('partials/header') %>
+
+<style>
+  .home-hero{
+    background: radial-gradient(1200px 600px at -10% 10%, #e0f2fe 0%, transparent 50%),
+                radial-gradient(1000px 500px at 110% -10%, #e6f7ff 0%, transparent 55%),
+                #f6f9ff;
+    position: relative;
+  }
+  .room-card{ transition:.2s transform, .2s box-shadow; }
+  .room-card:hover{ transform: translateY(-4px); box-shadow: 0 12px 28px rgba(2,132,199,.16); }
+
+  .city-img{ height: 360px; object-fit: cover; border-radius: 16px; }
+  .city-chip{ border-radius: 999px; padding: 6px 12px; border:1px solid #bde4ff; background:#e6f7ff; color:#0ea5e9; cursor:pointer; }
+  .city-chip.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+
+  /* Cards loại phòng */
+  .rtype-card{
+    border:0; border-radius:18px;
+    box-shadow:0 10px 24px rgba(2,132,199,.10);
+    transition:transform .18s ease, box-shadow .18s ease;
+    background:#fff;
+  }
+  .rtype-card:hover{ transform:translateY(-4px); box-shadow:0 14px 34px rgba(2,132,199,.16); }
+  .rtype-badge{
+    display:inline-block; font-size:.8rem; font-weight:600;
+    padding:.35rem .6rem; border-radius:999px; background:#e6f7ff; color:#0ea5e9;
+    border:1px solid #bde4ff;
+  }
+  .rtype-icon{
+    width:48px; height:48px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#e0f2fe,#dbeafe);
+    color:#0ea5e9; font-size:22px; font-weight:700;
+    box-shadow: inset 0 0 0 1px rgba(14,165,233,.25);
+  }
+</style>
+
+<!-- HERO / SEARCH SECTION -->
+<section class="home-hero overflow-hidden">
+  <div class="container py-5">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-6">
+        <h1 class="display-5 fw-bold text-primary-emphasis mb-2">
+          Đặt phòng nhanh – đẹp – minh bạch
+        </h1>
+        <p class="lead text-secondary mb-4">
+          Chọn ngày, lọc theo tên phòng/giá và đặt ngay. Giá hiển thị rõ ràng, xác nhận tức thì.
+        </p>
+
+        <!-- FORM TÌM KIẾM (ĐÃ BỎ TRƯỜNG ĐỊA ĐIỂM) -->
+        <form action="/search" method="get" class="row gy-2 gx-2 bg-white shadow-sm rounded-4 p-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label small text-muted">Từ khóa (tên/mã/loại)</label>
+            <input class="form-control" type="text" name="q" placeholder="Deluxe, D101, ...">
+          </div>
+
+          <!-- DROPDOWN LOẠI PHÒNG -->
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Loại phòng</label>
+            <select class="form-select" name="type">
+              <option value="">Tất cả loại phòng</option>
+              <option value="Standard">Standard</option>
+              <option value="Superior">Superior</option>
+              <option value="Deluxe" selected>Deluxe</option>
+              <option value="Suite">Suite</option>
+            </select>
+          </div>
+
+          <!-- ĐÃ BỎ: ĐỊA ĐIỂM INPUT -->
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Giá từ</label>
+            <input class="form-control" type="number" min="0" name="minPrice" placeholder="500000">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Giá đến</label>
+            <input class="form-control" type="number" min="0" name="maxPrice" placeholder="2000000">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Nhận phòng</label>
+            <input class="form-control" type="date" name="checkIn" id="checkIn" required>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small text-muted">Trả phòng</label>
+            <input class="form-control" type="date" name="checkOut" id="checkOut" required>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label small text-muted">Sắp xếp</label>
+            <select class="form-select" name="sort">
+              <option value="price_asc">Giá tăng dần</option>
+              <option value="price_desc">Giá giảm dần</option>
+              <option value="name_asc">Tên A → Z</option>
+              <option value="name_desc">Tên Z → A</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-3 d-grid align-self-end">
+            <button class="btn btn-info text-white fw-semibold" type="submit">Tìm phòng</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="ratio ratio-16x9 rounded-4 shadow-lg overflow-hidden">
+          <img id="heroImg" src="/images/hotel-banner.jpg" class="w-100 h-100 object-fit-cover"
+               alt="Hotel banner" onerror="this.src='/images/001.jpg'">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== GIỚI THIỆU CÁC LOẠI PHÒNG ====== -->
+<section class="py-5" style="background:#f8fbff;">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h4 fw-bold text-primary mb-0">Các loại phòng phổ biến</h2>
+      <span class="text-muted small">Nguồn: Vietnam Booking</span>
+    </div>
+
+    <div class="row g-4">
+      <!-- Standard -->
+      <div class="col-sm-6 col-lg-3">
+        <div class="card rtype-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="rtype-icon">S</div>
+              <div>
+                <div class="fw-bold mb-0">Standard</div>
+                <span class="rtype-badge">STD</span>
+              </div>
+            </div>
+            <p class="small text-muted mb-0">
+              Hạng <b>cơ bản</b>, diện tích vừa phải, tiện nghi tiêu chuẩn – phù hợp ngân sách tiết kiệm. 
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- Superior -->
+      <div class="col-sm-6 col-lg-3">
+        <div class="card rtype-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="rtype-icon">SP</div>
+              <div>
+                <div class="fw-bold mb-0">Superior</div>
+                <span class="rtype-badge">SUP</span>
+              </div>
+            </div>
+            <p class="small text-muted mb-0">
+              <b>Nâng cấp</b> so với Standard: phòng rộng hơn, trang trí đẹp, thường ở <b>tầng giữa</b>, giá vẫn “mềm”. 
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- Deluxe -->
+      <div class="col-sm-6 col-lg-3">
+        <div class="card rtype-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="rtype-icon">DX</div>
+              <div>
+                <div class="fw-bold mb-0">Deluxe</div>
+                <span class="rtype-badge">DLX</span>
+              </div>
+            </div>
+            <p class="small text-muted mb-0">
+              Ở <b>tầng cao</b>, <b>view đẹp</b>, tiện nghi hiện đại & cao cấp hơn – mức giá cao hơn SUP. 
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- Suite -->
+      <div class="col-sm-6 col-lg-3">
+        <div class="card rtype-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="rtype-icon">ST</div>
+              <div>
+                <div class="fw-bold mb-0">Suite</div>
+                <span class="rtype-badge">SUT</span>
+              </div>
+            </div>
+            <p class="small text-muted mb-0">
+              Hạng <b>sang</b>, diện tích lớn, thường có <b>phòng khách riêng</b>, trang bị & dịch vụ cao cấp. 
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3 small text-muted">
+      *Mô tả tóm tắt dựa trên phân loại theo chất lượng phòng: Standard → Superior → Deluxe → Suite.
+    </div>
+  </div>
+</section>
+
+<!-- ====== KHÁM PHÁ THEO LOẠI PHÒNG (thay cho "theo địa điểm") ====== -->
+<section class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h4 fw-bold text-primary mb-0">Khám phá theo loại phòng</h2>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="/rooms?type=Standard" class="city-chip">Standard</a>
+      <a href="/rooms?type=Superior" class="city-chip">Superior</a>
+      <a href="/rooms?type=Deluxe" class="city-chip">Deluxe</a>
+      <a href="/rooms?type=Suite" class="city-chip">Suite</a>
+    </div>
+  </div>
+
+  <img id="cityImg" class="w-100 city-img shadow-sm" src="/images/001.jpg" alt="City">
+</section>
+
+<!-- ====== PHÒNG NỔI BẬT ====== -->
+<section class="bg-white py-5">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h4 fw-bold text-primary">Phòng nổi bật</h2>
+      <span class="badge rounded-pill px-3 py-2 bg-info-subtle text-info fw-semibold">
+        Còn <span id="roomCount"><%= (rooms && rooms.length) || 0 %></span> phòng khả dụng
+      </span>
+    </div>
+
+    <div id="featuredGrid" class="row g-4">
+      <% if (rooms && rooms.length) { %>
+        <% rooms.forEach(r => { %>
+          <div class="col-sm-6 col-lg-4">
+            <a href="/user/room/<%= r._id %>" class="text-decoration-none text-dark">
+              <div class="card h-100 border-0 shadow-sm rounded-4 room-card">
+                <img
+                  src="<%= r.image && r.image.startsWith('/images/') ? r.image : (r.image ? '/images/' + r.image : '/images/room1.jpeg') %>"
+                  class="card-img-top rounded-top-4" style="height:220px;object-fit:cover"
+                  alt="<%= r.name || r.type || 'Room' %>"
+                  onerror="this.src='/images/room1.jpeg'">
+                <div class="card-body">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <h3 class="h6 fw-bold mb-0"><%= r.name || (r.type + ' - ' + r.roomNumber) %></h3>
+                    <span class="badge <%= (r.status==='available'?'bg-success-subtle text-success':'bg-secondary') %>">
+                      <%= r.status || 'available' %>
+                    </span>
+                  </div>
+                  <!-- ĐÃ BỎ HIỂN THỊ location để tránh tham chiếu r.location -->
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span class="fw-bold text-info"><%= (r.price||0).toLocaleString() %>₫/đêm</span>
+                    <span class="small text-muted"><%= r.type || '' %></span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <div class="col-12 text-muted">Hiện chưa có phòng khả dụng.</div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<!-- ====== CTA ====== -->
+<section class="py-5" style="background: linear-gradient(135deg,#0ea5e9,#2563eb);">
+  <div class="container">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-8">
+        <h2 class="h4 fw-bold text-white mb-1">Sẵn sàng cho kỳ nghỉ tiếp theo?</h2>
+        <p class="mb-0 text-white-50">Tìm phòng phù hợp và đặt ngay chỉ với vài cú nhấp chuột.</p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a href="/search?checkIn=&checkOut=" class="btn btn-light fw-semibold px-4">Bắt đầu tìm kiếm</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>
+
+<script>
+  (function(){
+    const today = new Date().toISOString().split('T')[0];
+    const inEl = document.getElementById('checkIn');
+    const outEl = document.getElementById('checkOut');
+    if(inEl){ inEl.min = today; }
+    if(outEl){ outEl.min = today; }
+    if(inEl && outEl){ inEl.addEventListener('change', ()=> { outEl.min = inEl.value || today; }); }
+  })();
+
+  // bỏ event city switching (không còn dùng)
+  // vẫn giữ hình mặc định, nếu muốn thay ảnh theo loại phòng có thể thêm JS sau
+</script>

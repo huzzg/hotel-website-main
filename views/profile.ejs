@@ -1,0 +1,70 @@
+<%- include('partials/header') %>
+
+<section class="py-4" style="background:#f6f9ff; min-height: calc(100vh - 72px);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="bg-white rounded-4 shadow-sm p-4">
+          <h1 class="h4 fw-bold text-primary mb-3">Hồ sơ cá nhân</h1>
+          <p class="text-muted small mb-3">Cập nhật thông tin để đặt phòng và nhận thông báo thuận tiện hơn.</p>
+
+          <% if (error) { %>
+            <div class="alert alert-danger d-flex align-items-center justify-content-between">
+              <span><strong>Lỗi:</strong> <%= error %></span>
+              <button class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          <% } %>
+          <% if (success) { %>
+            <div class="alert alert-success d-flex align-items-center justify-content-between">
+              <span><%= success %></span>
+              <button class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          <% } %>
+
+          <!-- IMPORTANT: gửi tới /user/profile (để match app.use('/user', userRoutes)) -->
+          <form action="/user/profile" method="post" class="row gy-3 needs-validation" novalidate>
+            <div class="col-md-6">
+              <label class="form-label">Họ và tên</label>
+              <input type="text" name="name" class="form-control" value="<%= data.name || '' %>" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Tên đăng nhập</label>
+              <input type="text" class="form-control" value="<%= data.username || '' %>" disabled>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" value="<%= data.email || '' %>" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Số điện thoại</label>
+              <input type="tel" name="phone" class="form-control" value="<%= data.phone || '' %>" placeholder="09xxxxxxxx">
+            </div>
+
+            <div class="col-12 d-grid mt-2">
+              <button class="btn btn-primary fw-semibold" type="submit">Lưu thay đổi</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  (() => {
+    const form = document.querySelector('form');
+    if (!form) return;
+    form.addEventListener('submit', e => {
+      if (!form.checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    });
+  })();
+</script>
+
+<%- include('partials/footer') %>

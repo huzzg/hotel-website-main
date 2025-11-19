@@ -1,0 +1,60 @@
+<%- include('partials/header') %>
+
+<div class="container my-4">
+  <!-- Nav Admin -->
+  <ul class="nav nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link active" href="/admin/dashboard">Tổng quan</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/rooms">Phòng</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/bookings">Đơn đặt</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/users">Khách hàng</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/discounts">Mã giảm giá</a></li>
+  </ul>
+
+  <div class="row g-3">
+    <div class="col-md-3">
+      <div class="card p-4 border-0 shadow-sm rounded-4">
+        <div class="small text-muted">Người dùng</div>
+        <div class="fs-2 fw-bold"><%= stat.users %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-4 border-0 shadow-sm rounded-4">
+        <div class="small text-muted">Phòng</div>
+        <div class="fs-2 fw-bold"><%= stat.rooms %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-4 border-0 shadow-sm rounded-4">
+        <div class="small text-muted">Đơn đặt</div>
+        <div class="fs-2 fw-bold"><%= stat.bookings %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card p-4 border-0 shadow-sm rounded-4">
+        <div class="small text-muted">Doanh thu (đ)</div>
+        <div class="fs-2 fw-bold"><%= stat.revenue.toLocaleString('vi-VN') %></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4 border-0 shadow-sm rounded-4">
+    <div class="card-body">
+      <h5 class="card-title">Doanh thu theo tháng</h5>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead><tr><th>Tháng</th><th>Doanh thu (đ)</th></tr></thead>
+          <tbody>
+          <% monthly.forEach(m => { %>
+            <tr>
+              <td><%= m._id.m %>/<%= m._id.y %></td>
+              <td><%= m.total.toLocaleString('vi-VN') %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

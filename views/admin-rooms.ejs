@@ -1,0 +1,278 @@
+<%- include('partials/header') %>
+
+<div class="container my-4">
+  <!-- Nav Admin -->
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><a class="nav-link" href="/admin/dashboard">Tổng quan</a></li>
+    <li class="nav-item"><a class="nav-link active" href="/admin/rooms">Phòng</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/bookings">Đơn đặt</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/users">Khách hàng</a></li>
+    <li class="nav-item"><a class="nav-link" href="/admin/discounts">Mã giảm giá</a></li>
+  </ul>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Quản lý phòng</h3>
+    <button id="btnAddRoom" class="btn btn-primary">+ Thêm phòng</button>
+  </div>
+
+  <div class="card p-3">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Số phòng</th>
+          <th>Loại</th>
+          <th>Giá/đêm</th>
+          <th>Trạng thái</th>
+          <th>Địa điểm</th>
+          <th>Ảnh</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (rooms && rooms.length) { %>
+          <% rooms.forEach(function(room, idx) { %>
+            <tr>
+              <td><%= idx + 1 %></td>
+              <td><%= room.roomNumber %></td>
+              <td><%= room.type || '' %></td>
+              <td><%= room.price %></td>
+              <td>
+                <% if (room.status === 'available') { %>
+                  <span class="badge bg-success">available</span>
+                <% } else { %>
+                  <span class="badge bg-secondary"><%= room.status %></span>
+                <% } %>
+              </td>
+              <td><%= room.location || '' %></td>
+              <td>
+                <% if (room.image) { %>
+                  <img src="<%= room.image %>" alt="room" style="width:60px;height:40px;object-fit:cover;border-radius:6px;">
+                <% } %>
+              </td>
+              <td>
+                <!-- Sửa mở modal bằng data- attrs (main.js sẽ gán handler) -->
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary btn-edit-room"
+                  data-id="<%= room._id %>"
+                  data-number="<%= room.roomNumber %>"
+                  data-type="<%= room.type %>"
+                  data-price="<%= room.price %>"
+                  data-status="<%= room.status %>"
+                  data-location="<%= room.location %>"
+                  data-image="<%= room.image %>">
+                  Sửa
+                </button>
+
+                <form method="post" action="/admin/rooms/<%= room._id %>/delete" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xác nhận xóa phòng?')">Xoá</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="8" class="text-center">Chưa có phòng</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL: Edit Room -->
+<div class="modal fade" id="editRoomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <!-- enctype để hỗ trợ file upload -->
+      <form id="editRoomForm" method="post" action="/admin/rooms/<%= (locals && locals._editId)? locals._editId : '' %>" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Sửa phòng</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- hidden id sẽ được fill bằng main.js -->
+          <input type="hidden" name="roomId" id="editRoomId">
+
+          <div class="mb-3">
+            <label class="form-label">Số phòng</label>
+            <input class="form-control" name="roomNumber" id="editRoomNumber" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Loại</label>
+            <input class="form-control" name="type" id="editRoomType">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Giá/đêm</label>
+            <input class="form-control" name="price" id="editRoomPrice" type="number" min="0">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Trạng thái</label>
+            <select class="form-select" name="status" id="editRoomStatus">
+              <option value="available">available</option>
+              <option value="booked">booked</option>
+              <option value="maintenance">maintenance</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Địa điểm</label>
+            <input class="form-control" name="location" id="editRoomLocation">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Ảnh phòng (chọn file để thay, nếu bỏ trống giữ ảnh cũ)</label>
+            <input type="file" class="form-control" name="image" id="editRoomImage" accept="image/*">
+            <input type="hidden" name="existingImage" id="editRoomExistingImage">
+            <div id="editRoomPreviewWrapper" class="mt-2">
+              <img id="editRoomPreview" src="" style="width:100px;border-radius:6px;display:none;">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+          <button type="submit" class="btn btn-primary">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Room -->
+<div class="modal fade" id="addRoomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="addRoomForm" method="post" action="/admin/rooms" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Thêm phòng mới</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Số phòng</label>
+            <input class="form-control" id="addRoomNumber" name="roomNumber" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Loại</label>
+            <input class="form-control" id="addRoomType" name="type">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Giá/đêm</label>
+            <input class="form-control" id="addRoomPrice" name="price" type="number" min="0">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Trạng thái</label>
+            <select class="form-select" id="addRoomStatus" name="status">
+              <option value="available">available</option>
+              <option value="booked">booked</option>
+              <option value="maintenance">maintenance</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Địa điểm</label>
+            <input class="form-control" id="addRoomLocation" name="location">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Ảnh phòng</label>
+            <input type="file" class="form-control" id="addRoomImage" name="image" accept="image/*">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+          <button type="submit" class="btn btn-primary">Thêm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
+
+<script>
+/* JS nhỏ: preview & fill data cho modal (dùng cùng với public/js/main.js) */
+document.addEventListener('DOMContentLoaded', function() {
+  // xử lý nút Sửa (main.js cũng có handler nhưng add this to ensure preview & fields)
+  document.querySelectorAll('.btn-edit-room').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const id = btn.dataset.id || '';
+      const number = btn.dataset.number || '';
+      const type = btn.dataset.type || '';
+      const price = btn.dataset.price || '';
+      const status = btn.dataset.status || 'available';
+      const location = btn.dataset.location || '';
+      const image = btn.dataset.image || '';
+
+      document.getElementById('editRoomId').value = id;
+      document.getElementById('editRoomNumber').value = number;
+      document.getElementById('editRoomType').value = type;
+      document.getElementById('editRoomPrice').value = price;
+      document.getElementById('editRoomStatus').value = status;
+      document.getElementById('editRoomLocation').value = location;
+      document.getElementById('editRoomExistingImage').value = image;
+
+      const preview = document.getElementById('editRoomPreview');
+      if (image) {
+        preview.src = image;
+        preview.style.display = 'inline-block';
+      } else {
+        preview.src = '';
+        preview.style.display = 'none';
+      }
+
+      // show modal via bootstrap if available
+      try {
+        const modalEl = document.getElementById('editRoomModal');
+        if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+          const m = new bootstrap.Modal(modalEl);
+          m.show();
+        } else {
+          modalEl.classList.add('show');
+          modalEl.style.display = 'block';
+          document.body.classList.add('modal-open');
+        }
+      } catch (e) { /* ignore */ }
+    });
+  });
+
+  // nút Thêm phòng mở modal
+  const addBtn = document.getElementById('btnAddRoom');
+  if (addBtn) {
+    addBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      // reset form
+      const f = document.getElementById('addRoomForm');
+      if (f) f.reset();
+      const modalEl = document.getElementById('addRoomModal');
+      try {
+        if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+          const m = new bootstrap.Modal(modalEl);
+          m.show();
+        } else {
+          modalEl.classList.add('show');
+          modalEl.style.display = 'block';
+          document.body.classList.add('modal-open');
+        }
+      } catch(e){}
+    });
+  }
+
+  // preview on file select edit
+  const editFile = document.getElementById('editRoomImage');
+  if (editFile) {
+    editFile.addEventListener('change', function(e){
+      const f = e.target.files && e.target.files[0];
+      const preview = document.getElementById('editRoomPreview');
+      if (!preview) return;
+      if (!f) { preview.style.display='none'; return; }
+      preview.src = URL.createObjectURL(f);
+      preview.style.display = 'inline-block';
+    });
+  }
+});
+</script>
