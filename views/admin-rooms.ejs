@@ -24,7 +24,6 @@
           <th>Loại</th>
           <th>Giá/đêm</th>
           <th>Trạng thái</th>
-          <th>Địa điểm</th>
           <th>Ảnh</th>
           <th>Hành động</th>
         </tr>
@@ -86,7 +85,7 @@
       <!-- enctype để hỗ trợ file upload -->
       <form id="editRoomForm" method="post" action="/admin/rooms/<%= (locals && locals._editId)? locals._editId : '' %>" enctype="multipart/form-data">
         <div class="modal-header">
-          <h5 class="modal-title">Sửa phòng</h5>
+          <h5 class="modal-title">Sửa thông tin phòng</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
@@ -118,10 +117,6 @@
             </select>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">Địa điểm</label>
-            <input class="form-control" name="location" id="editRoomLocation">
-          </div>
 
           <div class="mb-3">
             <label class="form-label">Ảnh phòng (chọn file để thay, nếu bỏ trống giữ ảnh cũ)</label>

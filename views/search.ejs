@@ -9,7 +9,7 @@
 
         <div class="col-md-4">
           <label class="form-label">Từ khóa (tên/mã/loại/địa điểm)</label>
-          <input type="text" class="form-control" name="q" value="<%= (query && query.q) || '' %>" placeholder="Deluxe, D101, Hà Nội...">
+          <input type="text" class="form-control" name="q" value="<%= (query && query.q) || '' %>" placeholder="Deluxe, D101...">
         </div>
 
         <div class="col-md-2">
@@ -21,11 +21,6 @@
             <option value="Deluxe"   <%= query && query.type==='Deluxe'   ? 'selected' : '' %>>Deluxe</option>
             <option value="Suite"    <%= query && query.type==='Suite'    ? 'selected' : '' %>>Suite</option>
           </select>
-        </div>
-
-        <div class="col-md-2">
-          <label class="form-label">Địa điểm</label>
-          <input type="text" class="form-control" name="city" value="<%= (query && query.city) || '' %>" placeholder="Hà Nội, Đà Nẵng...">
         </div>
 
         <div class="col-md-2">

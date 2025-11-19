@@ -1,85 +1,65 @@
-const express = require("express");
+// routes/search.js
+const express = require('express');
 const router = express.Router();
-const Room = require("../models/Room");
-const checkRoomAvailability = require("../utils/checkRoomAvailability");
+const Room = require('../models/Room');
 
-// SEARCH PAGE
-router.get("/", async (req, res) => {
+// GET /search?q=&type=&minPrice=&maxPrice=&sort=&page=
+router.get('/', async (req, res) => {
   try {
-    const {
-      q,
-      type,
-      price_min,
-      price_max,
-      checkIn,
-      checkOut,
-      sort,
-      page
-    } = req.query;
+    const q = (req.query.q || '').trim();
+    const type = (req.query.type || '').trim();
+    const minPrice = req.query.minPrice ? Number(req.query.minPrice) : undefined;
+    const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : undefined;
+    const sort = req.query.sort || 'price_asc';
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const perPage = 12;
 
     const filter = {};
 
-    // TÌM THEO TỪ KHÓA
-    if (q && q.trim()) {
-      const regex = new RegExp(q.trim(), "i");
+    if (q) {
+      const re = new RegExp(q, 'i');
       filter.$or = [
-        { name: regex },
-        { description: regex },
-        { code: regex }
+        { name: { $regex: re } },
+        { roomNumber: { $regex: re } },
+        { type: { $regex: re } },
+        { description: { $regex: re } }
       ];
     }
 
-    // LỌC THEO LOẠI PHÒNG (KHÔNG CÒN LOCATION)
-    if (type && type.trim()) filter.type = type.trim();
+    if (type) filter.type = type;
 
-    // GIÁ
-    if (price_min) filter.price = { ...(filter.price || {}), $gte: Number(price_min) };
-    if (price_max) filter.price = { ...(filter.price || {}), $lte: Number(price_max) };
-
-    // PHÒNG ACTIVE
-    filter.isActive = true;
-
-    // SORT
-    let sortQuery = {};
-    if (sort === "price_asc") sortQuery.price = 1;
-    else if (sort === "price_desc") sortQuery.price = -1;
-    else if (sort === "name_asc") sortQuery.name = 1;
-    else if (sort === "name_desc") sortQuery.name = -1;
-    else sortQuery.createdAt = -1;
-
-    // PAGINATION
-    const perPage = 9;
-    const currentPage = Math.max(1, parseInt(page) || 1);
-
-    const allRooms = await Room.find(filter).sort(sortQuery);
-
-    // CHECK AVAILABILITY (nếu có chọn ngày)
-    let availableRooms = [];
-    if (checkIn && checkOut) {
-      for (let room of allRooms) {
-        const free = await checkRoomAvailability(room._id, checkIn, checkOut);
-        if (free) availableRooms.push(room);
-      }
-    } else {
-      availableRooms = allRooms;
+    if (typeof minPrice !== 'undefined' || typeof maxPrice !== 'undefined') {
+      filter.price = {};
+      if (typeof minPrice !== 'undefined' && !Number.isNaN(minPrice)) filter.price.$gte = minPrice;
+      if (typeof maxPrice !== 'undefined' && !Number.isNaN(maxPrice)) filter.price.$lte = maxPrice;
     }
 
-    const total = availableRooms.length;
-    const paginatedRooms = availableRooms.slice(
-      (currentPage - 1) * perPage,
-      currentPage * perPage
-    );
+    // only active rooms if schema has isActive
+    if (Room.schema.paths.isActive) filter.isActive = true;
 
-    return res.render("search", {
-      rooms: paginatedRooms,
+    let query = Room.find(filter);
+
+    // sorting
+    if (sort === 'price_asc') query = query.sort({ price: 1 });
+    else if (sort === 'price_desc') query = query.sort({ price: -1 });
+    else if (sort === 'name_asc') query = query.sort({ name: 1 });
+    else if (sort === 'name_desc') query = query.sort({ name: -1 });
+    else query = query.sort({ createdAt: -1 });
+
+    const total = await Room.countDocuments(filter);
+    const rooms = await query.skip((page - 1) * perPage).limit(perPage).lean();
+
+    res.render('search', {
+      title: 'Kết quả tìm kiếm',
+      rooms,
       total,
-      page: currentPage,
+      page,
       pages: Math.ceil(total / perPage),
       query: req.query
     });
   } catch (err) {
-    console.error("Search Error:", err);
-    return res.status(500).send("Server Error");
+    console.error('Search route error:', err);
+    res.status(500).render ? res.render('error', { error: err }) : res.status(500).send('Server error');
   }
 });
 

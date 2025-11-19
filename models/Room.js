@@ -1,22 +1,16 @@
+// models/Room.js
 const mongoose = require('mongoose');
 
 const RoomSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  code: { type: String, required: true, unique: true },
-  type: { type: String, required: true }, // Standard, Superior, Deluxe, Suite
-  price: { type: Number, required: true },
+  roomNumber: { type: String, required: true },
+  name: { type: String },
+  type: { type: String, required: true }, // e.g. Standard, Deluxe...
+  price: { type: Number, default: 0 },
+  status: { type: String, default: 'available' },
+  image: { type: String },
   description: { type: String },
-  images: [{ type: String }],
-  amenities: [{ type: String }],
-  capacity: { type: Number, default: 2 },
-  isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-RoomSchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
+  isActive: { type: Boolean, default: true }
+  // NOTE: field `location` intentionally removed
+}, { timestamps: true });
 
 module.exports = mongoose.model('Room', RoomSchema);

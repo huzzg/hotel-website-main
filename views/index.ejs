@@ -1,282 +1,188 @@
 <%- include('partials/header') %>
 
 <style>
-  /* giữ phong cách gốc + tinh chỉnh cho phần Discover và chips */
-  .home-hero{
-    background: radial-gradient(1200px 600px at -10% 10%, #e0f2fe 0%, transparent 50%),
-                radial-gradient(1000px 500px at 110% -10%, #e6f7ff 0%, transparent 55%),
-                #f6f9ff;
-    position: relative;
-  }
-  .room-card{ transition:.2s transform, .2s box-shadow; }
-  .room-card:hover{ transform: translateY(-4px); box-shadow: 0 12px 28px rgba(2,132,199,.16); }
-
-  .city-img{ height: 360px; object-fit: cover; border-radius: 16px; }
-  .city-chip{ border-radius: 999px; padding: 6px 12px; border:1px solid #bde4ff; background:#e6f7ff; color:#0ea5e9; cursor:pointer; }
-  .city-chip.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
-
-  .rtype-card{ border:0; border-radius:18px; box-shadow:0 10px 24px rgba(2,132,199,.10); transition:transform .18s ease, box-shadow .18s ease; background:#fff; }
-  .rtype-badge{ display:inline-block; font-size:.8rem; font-weight:600; padding:.35rem .6rem; border-radius:999px; background:#e6f7ff; color:#0ea5e9; border:1px solid #bde4ff; }
-  .rtype-icon{ width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e0f2fe,#dbeafe); color:#0ea5e9; font-size:22px; font-weight:700; box-shadow: inset 0 0 0 1px rgba(14,165,233,.25); }
-
-  /* Discover enhanced */
-  .discover-enhanced{ display:flex; gap:28px; align-items:flex-start; margin-top:18px; }
-  .discover-left{ flex:1.15; }
-  .discover-right{ flex:1; }
-
-  .discover-image-wrap{ position:relative; border-radius:14px; overflow:hidden; box-shadow:0 14px 34px rgba(2,132,199,0.08); }
-  .discover-main-img{ width:100%; height:380px; object-fit:cover; display:block; transition: transform .6s cubic-bezier(.2,.9,.2,1), opacity .45s; }
-  .discover-main-img.fade-out{ opacity:0.0; transform:scale(.98); }
-  .discover-caption{ position:absolute; left:18px; bottom:18px; background:linear-gradient(90deg, rgba(255,255,255,0.92), rgba(255,255,255,0.6)); padding:8px 12px; border-radius:10px; font-weight:600; color:#075985; box-shadow: 0 6px 18px rgba(2,132,199,0.06); }
-
-  .type-list{ display:flex; flex-direction:column; gap:16px; }
-  .type-card{ display:flex; gap:16px; align-items:flex-start; background:#fff; padding:14px; border-radius:12px; box-shadow:0 10px 22px rgba(2,132,199,0.04); transition: transform .18s ease, box-shadow .18s ease; border-left:4px solid transparent; }
-  .type-card:hover{ transform: translateY(-6px); box-shadow:0 18px 40px rgba(2,132,199,0.10); border-left-color:#0ea5e9; }
-  .type-icon{ width:64px; height:64px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#0369a1; background:linear-gradient(135deg,#e6f7ff,#dbeafe); box-shadow: inset 0 0 0 1px rgba(14,165,233,0.06); font-size:18px; flex-shrink:0; }
-  .type-title{ margin:0 0 6px; font-size:1.05rem; display:flex; align-items:center; gap:8px; }
-  .type-tag{ font-size:.75rem; padding:.25rem .5rem; background:#e6f7ff; color:#0369a1; border-radius:10px; border:1px solid #bde4ff; font-weight:700; }
-  .type-desc{ margin:0 0 8px; color:#475569; }
-  .type-features{ margin:0; padding-left:18px; color:#64748b; font-size:.95rem; }
-
-  /* Chips */
-  .type-chip{ background:transparent; border:1px solid #c7e9ff; color:#0369a1; padding:6px 10px; border-radius:999px; cursor:pointer; transition:all .18s; }
-  .type-chip:hover, .type-chip.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; box-shadow:0 8px 24px rgba(14,165,233,0.12); transform:translateY(-3px); }
-
-  @media (max-width: 980px){
-    .discover-enhanced{ flex-direction:column; }
-    .discover-main-img{ height:240px; }
-    .discover-left, .discover-right{ width:100%; }
+  /* Tinh chỉnh nhỏ cho phần 'Khám phá theo loại phòng' */
+  .discover-section { background:#f8fbff; padding:34px 0; }
+  .discover-grid { display:flex; gap:28px; align-items:flex-start; }
+  .discover-left { flex:1.2; }
+  .discover-right { flex:1; display:flex; flex-direction:column; gap:14px; }
+  .discover-img { width:100%; height:380px; object-fit:cover; border-radius:14px; box-shadow:0 12px 36px rgba(2,132,199,.08); transition:all .35s ease; }
+  .type-chip { border-radius:999px; padding:.45rem .8rem; border:1px solid #c7e9ff; background:transparent; color:#0369a1; cursor:pointer; transition:.18s; }
+  .type-chip.active { background:#0ea5e9; color:#fff; border-color:#0ea5e9; box-shadow:0 10px 28px rgba(14,165,233,.12); transform:translateY(-3px); }
+  .type-card { background:#fff; padding:12px; border-radius:12px; box-shadow:0 10px 22px rgba(2,132,199,.04); display:flex; gap:12px; align-items:flex-start; transition:.18s; }
+  .type-card:hover { transform:translateY(-6px); box-shadow:0 18px 40px rgba(2,132,199,.10); }
+  .type-icon { width:56px; height:56px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e6f7ff,#dbeafe); color:#0369a1; font-weight:700; }
+  @media (max-width:980px) {
+    .discover-grid { flex-direction:column; }
+    .discover-img { height:220px; }
   }
 </style>
 
-<section class="home-hero overflow-hidden">
-  <div class="container py-5">
-    <div class="row align-items-center g-4">
-      <div class="col-lg-6">
-        <h1 class="display-5 fw-bold text-primary-emphasis mb-2">
-          Đặt phòng nhanh – đẹp – minh bạch
-        </h1>
-        <p class="lead text-secondary mb-4">
-          Chọn ngày, lọc theo tên phòng/giá và đặt ngay. Giá hiển thị rõ ràng, xác nhận tức thì.
-        </p>
+<section class="container py-5">
+  <div class="row align-items-center">
+    <div class="col-lg-6">
+      <h1 class="display-5 fw-bold">Đặt phòng nhanh – đẹp – minh bạch</h1>
+      <p class="text-muted">Chọn ngày, lọc theo tên phòng/giá và đặt ngay. Giá hiển thị rõ ràng, xác nhận tức thì.</p>
 
-        <form action="/search" method="get" class="row gy-2 gx-2 bg-white shadow-sm rounded-4 p-3">
-          <div class="col-12 col-md-6">
-            <label class="form-label small text-muted">Từ khóa (tên/mã/loại)</label>
-            <input class="form-control" type="text" name="q" placeholder="Deluxe, D101, ...">
-          </div>
-
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Loại phòng</label>
-            <select class="form-select" name="type">
-              <option value="">Tất cả loại phòng</option>
-              <option value="Standard">Standard</option>
-              <option value="Superior">Superior</option>
-              <option value="Deluxe">Deluxe</option>
-              <option value="Suite">Suite</option>
-            </select>
-          </div>
-
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Giá từ</label>
-            <input class="form-control" type="number" min="0" name="minPrice">
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Giá đến</label>
-            <input class="form-control" type="number" min="0" name="maxPrice">
-          </div>
-
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Nhận phòng</label>
-            <input class="form-control" type="date" name="checkIn" id="checkIn">
-          </div>
-          <div class="col-6 col-md-3">
-            <label class="form-label small text-muted">Trả phòng</label>
-            <input class="form-control" type="date" name="checkOut" id="checkOut">
-          </div>
-
-          <div class="col-12 col-md-3">
-            <label class="form-label small text-muted">Sắp xếp</label>
-            <select class="form-select" name="sort">
-              <option value="price_asc">Giá tăng dần</option>
-              <option value="price_desc">Giá giảm dần</option>
-              <option value="name_asc">Tên A → Z</option>
-              <option value="name_desc">Tên Z → A</option>
-            </select>
-          </div>
-
-          <div class="col-12 col-md-3 d-grid align-self-end">
-            <button class="btn btn-info text-white fw-semibold" type="submit">Tìm phòng</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="col-lg-6">
-        <div class="ratio ratio-16x9 rounded-4 shadow-lg overflow-hidden">
-          <img id="heroImg" src="/images/hotel-banner.jpg" class="w-100 h-100 object-fit-cover"
-               alt="Hotel banner" onerror="this.src='/images/001.jpg'">
+      <!-- form tìm kiếm (đã bỏ địa điểm) -->
+      <form action="/search" method="get" class="row g-2 bg-white p-3 rounded shadow-sm">
+        <div class="col-12 col-md-6">
+          <label class="form-label small text-muted">Từ khóa</label>
+          <input class="form-control" type="text" name="q" placeholder="Deluxe, D101, ...">
         </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small text-muted">Loại phòng</label>
+          <select name="type" class="form-select">
+            <option value="">Tất cả</option>
+            <option value="Standard">Standard</option>
+            <option value="Superior">Superior</option>
+            <option value="Deluxe">Deluxe</option>
+            <option value="Suite">Suite</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small text-muted">Giá từ</label>
+          <input class="form-control" type="number" name="minPrice" min="0">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small text-muted">Giá đến</label>
+          <input class="form-control" type="number" name="maxPrice" min="0">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small text-muted">Nhận phòng</label>
+          <input class="form-control" type="date" name="checkIn" id="checkIn">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small text-muted">Trả phòng</label>
+          <input class="form-control" type="date" name="checkOut" id="checkOut">
+        </div>
+        <div class="col-12 col-md-3">
+          <button class="btn btn-info w-100 text-white mt-2" type="submit">Tìm phòng</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="ratio ratio-16x9 rounded-4 overflow-hidden">
+        <img src="/images/hotel-banner.jpg" onerror="this.src='/images/room1.jpeg'" alt="banner" class="w-100 h-100 object-fit-cover">
       </div>
     </div>
   </div>
 </section>
 
-<!-- Discover upgraded -->
-<section class="py-5" style="background:#f8fbff;">
+<!-- Khám phá theo loại phòng -->
+<section class="discover-section">
   <div class="container">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <h2 class="h4 fw-bold text-primary mb-0">Khám phá theo loại phòng</h2>
-      <div class="d-flex gap-2 flex-wrap">
-        <button class="type-chip" data-target="standard">Standard</button>
-        <button class="type-chip" data-target="superior">Superior</button>
-        <button class="type-chip" data-target="deluxe">Deluxe</button>
-        <button class="type-chip" data-target="suite">Suite</button>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="text-primary fw-bold">Khám phá theo loại phòng</h3>
+      <div class="d-flex gap-2">
+        <button class="type-chip" data-key="standard">Standard</button>
+        <button class="type-chip" data-key="superior">Superior</button>
+        <button class="type-chip" data-key="deluxe">Deluxe</button>
+        <button class="type-chip" data-key="suite">Suite</button>
       </div>
     </div>
 
-    <div class="discover-enhanced">
+    <div class="discover-grid">
       <div class="discover-left">
-        <div class="discover-image-wrap">
-          <img id="discoverMainImg" src="/images/room-explore.jpg" alt="Room explore" class="discover-main-img" />
-          <div id="discoverCaption" class="discover-caption">Khám phá các loại phòng</div>
-        </div>
+        <img id="discoverMainImg" class="discover-img" src="/images/room-explore.jpg" alt="explore" onerror="this.src='/images/room1.jpeg'">
       </div>
 
       <div class="discover-right">
-        <div class="type-list">
-          <article id="type-standard" class="type-card">
-            <div class="type-icon">S</div>
-            <div class="type-content">
-              <h4 class="type-title">Standard <span class="type-tag">Cơ Bản</span></h4>
-              <p class="type-desc">Hạng <strong>cơ bản</strong>, diện tích vừa phải, tiện nghi tiêu chuẩn. Phù hợp cho khách muốn tiết kiệm nhưng vẫn đảm bảo trải nghiệm thoải mái và sạch sẽ.</p>
-              <ul class="type-features"><li>Giường đơn/giường đôi</li><li>Wi-Fi miễn phí</li><li>Phòng tắm riêng</li></ul>
-            </div>
-          </article>
-
-          <article id="type-superior" class="type-card">
-            <div class="type-icon">SP</div>
-            <div class="type-content">
-              <h4 class="type-title">Superior <span class="type-tag">Hạng Trung</span></h4>
-              <p class="type-desc">Nâng cấp so với Standard: phòng rộng hơn, trang trí đẹp, thường ở tầng giữa — phù hợp khách đi công tác hoặc cặp đôi.</p>
-              <ul class="type-features"><li>Bàn làm việc</li><li>View tốt hơn</li><li>Mini-bar (tùy phòng)</li></ul>
-            </div>
-          </article>
-
-          <article id="type-deluxe" class="type-card">
-            <div class="type-icon">DX</div>
-            <div class="type-content">
-              <h4 class="type-title">Deluxe <span class="type-tag">Hạng Cao</span></h4>
-              <p class="type-desc">Phòng Deluxe thường ở tầng cao, có <strong>view đẹp</strong> và nội thất cao cấp hơn — dành cho khách muốn trải nghiệm tốt hơn.</p>
-              <ul class="type-features"><li>Giường cỡ lớn</li><li>TV màn hình phẳng</li><li>Dịch vụ phòng</li></ul>
-            </div>
-          </article>
-
-          <article id="type-suite" class="type-card">
-            <div class="type-icon">ST</div>
-            <div class="type-content">
-              <h4 class="type-title">Suite <span class="type-tag">Hạng Sang</span></h4>
-              <p class="type-desc"><strong>Hạng sang</strong>, có phòng khách riêng, phù hợp cho gia đình hoặc khách muốn không gian cao cấp.</p>
-              <ul class="type-features"><li>Phòng khách riêng</li><li>Bồn tắm</li><li>Dịch vụ cao cấp</li></ul>
-            </div>
-          </article>
+        <div id="card-standard" class="type-card">
+          <div class="type-icon">S</div>
+          <div>
+            <h5 class="mb-1">Standard <span class="badge bg-light text-muted">Hạng cơ bản</span></h5>
+            <p class="text-muted small">Hạng cơ bản, diện tích vừa phải, tiện nghi tiêu chuẩn. Phù hợp cho khách muốn tiết kiệm.</p>
+          </div>
         </div>
+
+        <div id="card-superior" class="type-card">
+          <div class="type-icon">SP</div>
+          <div>
+            <h5 class="mb-1">Superior <span class="badge bg-light text-muted">Hạng trung</span></h5>
+            <p class="text-muted small">Phòng rộng hơn, trang trí đẹp, phù hợp khách công tác và cặp đôi.</p>
+          </div>
+        </div>
+
+        <div id="card-deluxe" class="type-card">
+          <div class="type-icon">DX</div>
+          <div>
+            <h5 class="mb-1">Deluxe <span class="badge bg-light text-muted">Hạng cao</span></h5>
+            <p class="text-muted small">View đẹp, nội thất cao cấp hơn, phù hợp khách du lịch muốn trải nghiệm.</p>
+          </div>
+        </div>
+
+        <div id="card-suite" class="type-card">
+          <div class="type-icon">ST</div>
+          <div>
+            <h5 class="mb-1">Suite <span class="badge bg-light text-muted">Hạng sang</span></h5>
+            <p class="text-muted small">Hạng sang, phòng khách riêng, dịch vụ cao cấp.</p>
+          </div>
+        </div>
+
       </div>
     </div>
-
   </div>
 </section>
 
-<!-- Featured rooms -->
-<section class="bg-white py-5">
-  <div class="container">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <h2 class="h4 fw-bold text-primary">Phòng nổi bật</h2>
-      <span class="badge rounded-pill px-3 py-2 bg-info-subtle text-info fw-semibold">
-        Còn <span id="roomCount"><%= (rooms && rooms.length) || 0 %></span> phòng khả dụng
-      </span>
-    </div>
+<!-- Featured rooms (giữ nguyên các include hiện có trong project) -->
+<section class="container py-5">
+  <h3 class="text-primary fw-bold mb-3">Phòng nổi bật</h3>
 
-    <div class="row g-4">
-      <% if (rooms && rooms.length) { %>
-        <% rooms.forEach(r => { %>
-          <div class="col-sm-6 col-lg-4">
-            <a href="/user/room/<%= r._id %>" class="text-decoration-none text-dark">
-              <div class="card h-100 border-0 shadow-sm rounded-4 room-card">
-                <img
-                  src="<%= (r.image && (r.image.startsWith('/images/') || r.image.startsWith('http'))) ? r.image : (r.image ? '/images/' + r.image : '/images/room1.jpeg') %>"
-                  class="card-img-top rounded-top-4" style="height:220px;object-fit:cover"
-                  alt="<%= r.name || r.type || 'Room' %>"
-                  onerror="this.src='/images/room1.jpeg'">
-                <div class="card-body">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <h3 class="h6 fw-bold mb-0"><%= r.name || (r.type + ' - ' + r.roomNumber) %></h3>
-                    <span class="badge <%= (r.status==='available'?'bg-success-subtle text-success':'bg-secondary') %>">
-                      <%= r.status || 'available' %>
-                    </span>
-                  </div>
-                  <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-bold text-info"><%= (r.price||0).toLocaleString() %>₫/đêm</span>
-                    <span class="small text-muted"><%= r.type || '' %></span>
-                  </div>
+  <div class="row g-4">
+    <% if (rooms && rooms.length) { %>
+      <% rooms.forEach(r => { %>
+        <div class="col-sm-6 col-lg-4">
+          <a href="/user/room/<%= r._id %>" class="text-decoration-none text-dark">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+              <img src="<%= (r.image && (r.image.startsWith('/images/') || r.image.startsWith('http'))) ? r.image : (r.image ? '/images/' + r.image : '/images/room1.jpeg') %>"
+                   class="card-img-top rounded-top-4" style="height:220px;object-fit:cover" alt="room" onerror="this.src='/images/room1.jpeg'">
+              <div class="card-body">
+                <h6 class="fw-bold mb-1"><%= r.name || (r.type + ' - ' + r.roomNumber) %></h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="text-info fw-bold"><%= (r.price||0).toLocaleString() %>₫/đêm</div>
+                  <div class="small text-muted"><%= r.type || '' %></div>
                 </div>
               </div>
-            </a>
-          </div>
-        <% }) %>
-      <% } else { %>
-        <div class="col-12 text-muted">Hiện chưa có phòng khả dụng.</div>
-      <% } %>
-    </div>
+            </div>
+          </a>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="col-12 text-muted">Hiện chưa có phòng khả dụng.</div>
+    <% } %>
   </div>
 </section>
 
 <%- include('partials/footer') %>
 
 <script>
-(function(){
-  // mapping id -> image path (fallback if missing)
-  const imgs = {
-    'standard': '/images/Standard.jpg',
-    'superior': '/images/Superior.jpg',
-    'deluxe': '/images/Deluxe.jpg',
-    'suite': '/images/Suite.jpg'
-  };
-
-  // chips behavior
-  document.querySelectorAll('.type-chip').forEach(btn=>{
-    btn.addEventListener('click', function(e){
-      e.preventDefault();
-      const key = this.dataset.target;
-      // active state
-      document.querySelectorAll('.type-chip').forEach(b=>b.classList.remove('active'));
-      this.classList.add('active');
-
-      // change image with fade
-      const img = document.getElementById('discoverMainImg');
-      const cap = document.getElementById('discoverCaption');
-      if(img){
-        img.classList.add('fade-out');
-        setTimeout(()=> {
-          img.src = imgs[key] || '/images/room-explore.jpg';
-          cap.textContent = this.textContent || '';
-          img.classList.remove('fade-out');
-        }, 220);
-      }
-
-      // scroll to the card on the right (if visible)
-      const target = document.getElementById('type-'+key);
-      if(target){
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+  (function(){
+    const imgs = {
+      standard: '/images/Standard.jpg',
+      superior: '/images/Superior.jpg',
+      deluxe: '/images/Deluxe.jpg',
+      suite: '/images/Suite.jpg'
+    };
+    document.querySelectorAll('.type-chip').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.type-chip').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const key = btn.dataset.key;
+        const img = document.getElementById('discoverMainImg');
+        if(img){
+          img.style.opacity = 0;
+          setTimeout(()=>{ img.src = imgs[key] || '/images/room-explore.jpg'; img.style.opacity = 1; }, 180);
+        }
+      });
     });
-  });
 
-  // setup date min
-  const today = new Date().toISOString().split('T')[0];
-  const inEl = document.getElementById('checkIn');
-  const outEl = document.getElementById('checkOut');
-  if(inEl){ inEl.min = today; }
-  if(outEl){ outEl.min = today; }
-  if(inEl && outEl){ inEl.addEventListener('change', ()=> { outEl.min = inEl.value || today; }); }
-})();
+    const today = new Date().toISOString().split('T')[0];
+    const inEl = document.getElementById('checkIn');
+    const outEl = document.getElementById('checkOut');
+    if(inEl) inEl.min = today;
+    if(outEl) outEl.min = today;
+    if(inEl && outEl) inEl.addEventListener('change', ()=> outEl.min = inEl.value || today);
+  })();
 </script>
