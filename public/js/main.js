@@ -1,182 +1,153 @@
 // public/js/main.js
-// Cập nhật: giảm mức độ "sweep" để không xóa modal hợp lệ.
-// - chỉ remove các backdrop/overlay có class/selector rõ ràng
-// - đảm bảo modal được append vào body
-// - gắn handler cho nút Sửa và nút Thêm phòng
+(function (global) {
+  'use strict';
 
-(function () {
-  function onReady(fn) { if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  function onReady(fn){ if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
 
-  // remove only known problematic overlays/backdrops (safe)
-  function removeCommonBackdrops() {
+  function removeKnownExtensionOverlays(){
     try {
-      const sel = ['.modal-backdrop', '.backdrop', '.overlay', '.mask-overlay', '.site-overlay', '[data-blocker="true"]'];
-      sel.forEach(s => document.querySelectorAll(s).forEach(e => e.remove()));
-      document.body.classList.remove('modal-open');
-      // restore pointer-events if set inline to none
-      document.querySelectorAll('[style]').forEach(el=>{
-        try {
-          if (el.style && el.style.pointerEvents === 'none') el.style.pointerEvents = '';
-        } catch(e){}
-      });
-    } catch (e) {
-      console.warn('removeCommonBackdrops error', e);
-    }
+      ['#__en2vi-host','#envi2-host','#en2vi-host','.savior-host','.corom-element','.overlay','[data-savior-injected]']
+        .forEach(sel => document.querySelectorAll(sel).forEach(el => { try{ el.remove(); } catch(e){ el.style.display='none'; el.style.pointerEvents='none'; } }));
+    } catch(e){}
   }
 
-  // append modals to body to avoid parent overflow clipping
-  function appendModalsToBody() {
-    try {
-      document.querySelectorAll('.modal').forEach(m => {
-        if (m.parentElement !== document.body) {
-          document.body.appendChild(m);
-        }
-        if (!m.classList.contains('show')) {
-          m.style.display = 'none';
-        }
-      });
-    } catch (e) {
-      console.warn('appendModalsToBody error', e);
+  function showModalById(id){
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    if (window.bootstrap && window.bootstrap.Modal){
+      try { new bootstrap.Modal(modal).show(); return; } catch(e){}
     }
-  }
-
-  // show/hide helpers (Bootstrap 5 aware)
-  function showModalById(id) {
-    const modalEl = document.getElementById(id);
-    if (!modalEl) return;
-    if (window.bootstrap && typeof bootstrap.Modal === 'function') {
-      try {
-        const inst = new bootstrap.Modal(modalEl);
-        inst.show();
-        return;
-      } catch (e) { /* fallback */ }
-    }
-    // fallback manual show, but ensure we don't create blocking backdrop
-    removeCommonBackdrops();
-    modalEl.classList.add('show');
-    modalEl.style.display = 'block';
+    modal.classList.add('show');
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden','false');
     document.body.classList.add('modal-open');
-    if (!document.querySelector('.modal-backdrop')) {
-      const back = document.createElement('div');
-      back.className = 'modal-backdrop fade show';
-      back.style.pointerEvents = 'none';
-      back.style.opacity = '0';
-      document.body.appendChild(back);
+    if (!document.querySelector('.modal-backdrop')){
+      const b = document.createElement('div');
+      b.className = 'modal-backdrop';
+      b.style.position = 'fixed';
+      b.style.left = '0'; b.style.top = '0';
+      b.style.width = '100%'; b.style.height = '100%';
+      b.style.zIndex = '1040'; b.style.background = 'rgba(0,0,0,0.25)';
+      document.body.appendChild(b);
     }
   }
 
-  function hideModalByEl(modalEl) {
-    if (!modalEl) return;
-    if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+  function hideModalById(id){
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    if (window.bootstrap && window.bootstrap.Modal){
       try {
-        const inst = bootstrap.Modal.getInstance(modalEl);
-        if (inst) { inst.hide(); return; }
-      } catch (e) { /* fallback */ }
+        const inst = bootstrap.Modal.getInstance(modal);
+        if (inst) inst.hide(); else new bootstrap.Modal(modal).hide();
+        return;
+      } catch(e){}
     }
-    modalEl.classList.remove('show');
-    modalEl.style.display = 'none';
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden','true');
     document.body.classList.remove('modal-open');
-    const back = document.querySelector('.modal-backdrop');
-    if (back) back.remove();
+    document.querySelectorAll('.modal-backdrop').forEach(b => { try{ b.remove(); } catch(e){} });
   }
 
-  // attach edit handlers
-  function initEditRoomButtons() {
-    try {
-      document.querySelectorAll('.btn-edit-room').forEach(btn => {
-        // remove old bound handler if any
-        if (btn._editHandler) btn.removeEventListener('click', btn._editHandler);
-        const handler = function (e) {
-          e.preventDefault();
-          const ds = btn.dataset || {};
-          const id = ds.id || '';
-          const number = ds.number || ds.roomNumber || '';
-          const type = ds.type || '';
-          const price = ds.price || '';
-          const status = ds.status || 'available';
-          const location = ds.location || '';
-          const image = ds.image || '';
-
-          const map = {
-            editRoomId: id,
-            editRoomNumber: number,
-            editRoomType: type,
-            editRoomPrice: price,
-            editRoomStatus: status,
-            editRoomLocation: location,
-            editRoomImage: image
-          };
-          Object.keys(map).forEach(k => {
-            const el = document.getElementById(k);
-            if (el) el.value = map[k];
-          });
-
-          showModalById('editRoomModal');
-        };
-        btn.addEventListener('click', handler);
-        btn._editHandler = handler;
-      });
-    } catch (e) {
-      console.warn('initEditRoomButtons error', e);
-    }
-  }
-
-  // init "Add room" button to open add-modal (avoids redirect to missing route)
-  function initAddRoomButton() {
-    const addBtn = document.getElementById('btnAddRoom');
-    if (!addBtn) return;
-    addBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      // clear fields in add modal
-      const arr = ['addRoomNumber','addRoomType','addRoomPrice','addRoomStatus','addRoomLocation','addRoomImage'];
-      arr.forEach(id=>{
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      showModalById('addRoomModal');
+  function initEditRoomButtons(){
+    document.querySelectorAll('.btn-edit-room, .btn-edit, .edit-room-btn').forEach(btn=>{
+      if (btn._attachedEditHandler) return;
+      const handler = function(e){
+        e.preventDefault();
+        removeKnownExtensionOverlays();
+        const ds = btn.dataset || {};
+        const id = ds.id || ds.roomid || ds.roomId || ds.roomId || ds['room-id'] || ds['room-id'];
+        const form = document.getElementById('editRoomForm');
+        if (form && id){
+          // set action if needed
+          try { form.action = '/admin/rooms/' + id + '?_method=PUT'; } catch(e){}
+          const setVal = (sel, v) => { const el=document.querySelector(sel); if(!el) return; if('value' in el) el.value = v; else el.textContent = v; };
+          setVal('#editRoomId', id);
+          setVal('#editRoomNumber', ds.roomNumber || ds.number || '');
+          setVal('#editRoomType', ds.type || '');
+          setVal('#editRoomPrice', ds.price || '');
+          setVal('#editRoomStatus', ds.status || '');
+          setVal('#editRoomLocation', ds.location || '');
+          const preview = document.getElementById('editRoomPreview');
+          if (preview){
+            if (ds.image){ preview.src = ds.image; preview.style.display='block'; } else { preview.src=''; preview.style.display='none'; }
+          }
+        }
+        showModalById('editRoomModal');
+      };
+      btn.addEventListener('click', handler);
+      btn._attachedEditHandler = true;
     });
   }
 
-  // dropdown fallback (if bootstrap dropdown not loaded)
-  function initDropdownFallback() {
-    document.addEventListener('click', function (e) {
-      const toggle = e.target.closest('.dropdown-toggle');
-      if (!toggle) return;
+  function initAddRoomButton(){
+    const addBtn = document.getElementById('addRoomBtn') || document.getElementById('btnAddRoom') || document.querySelector('.add-room-btn') || document.querySelector('[data-action="add-room"]');
+    if (!addBtn) return;
+    if (addBtn._attachedAddHandler) return;
+    const handler = function(e){
       e.preventDefault();
-      const parent = toggle.parentElement;
-      if (!parent) return;
-      const menu = parent.querySelector('.dropdown-menu');
-      if (!menu) return;
-      document.querySelectorAll('.dropdown-menu.show').forEach(m => { if (m !== menu) m.classList.remove('show'); });
-      menu.classList.toggle('show');
-    }, true);
+      removeKnownExtensionOverlays();
+      const form = document.getElementById('addRoomForm');
+      if (form) form.reset();
+      const prev = document.getElementById('addRoomPreview') || document.getElementById('addRoomImagePreview');
+      if (prev){ try{ prev.src=''; prev.style.display='none'; } catch(e){} }
+      showModalById('addRoomModal');
+    };
+    addBtn.addEventListener('click', handler);
+    addBtn._attachedAddHandler = true;
   }
 
-  onReady(function () {
-    appendModalsToBody();
-    removeCommonBackdrops();
+  function initPreviewInputs(){
+    document.querySelectorAll('input[type="file"]').forEach(inp=>{
+      if (inp._previewAttached) return;
+      const h = function(){
+        try {
+          const file = inp.files && inp.files[0]; if(!file) return;
+          const id = inp.dataset.preview || inp.getAttribute('data-preview') || (inp.id === 'addRoomImage' ? 'addRoomPreview' : (inp.id === 'editRoomImage' ? 'editRoomPreview' : ''));
+          const prev = id ? document.getElementById(id) : null;
+          const r = new FileReader();
+          r.onload = function(ev){
+            if (!prev) return;
+            if (prev.tagName === 'IMG'){ prev.src = ev.target.result; prev.style.display = 'block'; }
+            else prev.innerHTML = '<img src="' + ev.target.result + '" style="max-width:120px;max-height:80px;border-radius:6px;">';
+          };
+          r.readAsDataURL(file);
+        } catch(e){}
+      };
+      inp.addEventListener('change', h);
+      inp._previewAttached = true;
+    });
+  }
+
+  function initAll(){
+    removeKnownExtensionOverlays();
     initEditRoomButtons();
     initAddRoomButton();
-    initDropdownFallback();
-
-    // close manual modals on click to [data-bs-dismiss] or .btn-close
-    document.addEventListener('click', function (e) {
-      const dismiss = e.target.closest('[data-bs-dismiss="modal"], .btn-close');
-      if (dismiss) {
-        const modalEl = e.target.closest('.modal');
-        if (modalEl) hideModalByEl(modalEl);
+    initPreviewInputs();
+    // ensure dropdown fallback works if bootstrap missing
+    try {
+      if (!window.bootstrap) {
+        document.querySelectorAll('.dropdown-toggle').forEach(t => {
+          if (t._fallbackBound) return;
+          t.addEventListener('click', function(e){
+            e.preventDefault();
+            const menu = t.parentElement.querySelector('.dropdown-menu');
+            if (!menu) return;
+            const open = menu.classList.contains('show');
+            document.querySelectorAll('.dropdown-menu.show').forEach(m=>m.classList.remove('show'));
+            if (!open) menu.classList.add('show');
+          });
+          t._fallbackBound = true;
+        });
       }
-    });
+    } catch(e){}
+  }
 
-    // escape key close fallback
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        document.querySelectorAll('.modal.show').forEach(m => hideModalByEl(m));
-      }
-    });
+  global.initEditRoomButtons = initEditRoomButtons;
+  global.initAddRoomButton = initAddRoomButton;
+  global.initPreviewInputs = initPreviewInputs;
+  global.mainSafeInit = initAll;
 
-    // small delayed cleanup only for obvious backdrops (not sweeps)
-    setTimeout(removeCommonBackdrops, 300);
-  });
+  onReady(function(){ try{ initAll(); } catch(e){ console.warn('mainSafeInit', e); } setTimeout(()=>{ try{ initAll(); } catch(e){} }, 400); });
 
-})();
+})(window);

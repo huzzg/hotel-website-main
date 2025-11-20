@@ -1,15 +1,14 @@
 /* ===========================
-   Theme – Hotel Phenikaa
+   Theme – Hotel Phenikaa (cleaned)
    =========================== */
 
-/* Google Font (Inter) – sẽ được load từ header */
 :root{
-  --brand: #0ea5e9;         /* cyan-500 */
-  --brand-dark: #0284c7;    /* cyan-600 */
-  --ink: #0f172a;           /* slate-900 */
-  --ink-2: #334155;         /* slate-700 */
-  --muted: #64748b;         /* slate-500 */
-  --bg: #f8fafc;            /* slate-50 */
+  --brand: #0ea5e9;
+  --brand-dark: #0284c7;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #64748b;
+  --bg: #f8fafc;
   --card: #ffffff;
   --radius: 14px;
   --radius-sm: 10px;
@@ -24,53 +23,7 @@ html, body{
   background: var(--bg);
 }
 
-/* --------- Common --------- */
-.container-narrow{ max-width: 1040px; margin-inline: auto; padding-inline: 16px; }
-.container-wide{ max-width: 1280px; margin-inline: auto; padding-inline: 16px; }
-
-.card-soft{
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-.card-glass{
-  background: rgba(255,255,255,.9);
-  backdrop-filter: blur(6px);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-brand{
-  background: var(--brand);
-  border: none;
-  color: #fff;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 600;
-  transition: .2s ease;
-}
-.btn-brand:hover{ background: var(--brand-dark); color: #fff; }
-
-.btn-ghost{
-  background: transparent;
-  border: 1px solid rgba(255,255,255,.35);
-  color: #fff;
-  border-radius: 999px;
-  padding: 10px 15px;
-  font-weight: 600;
-}
-.btn-ghost:hover{ background: rgba(255,255,255,.1); color: #fff; }
-
-.form-control{
-  border-radius: var(--radius-sm) !important;
-  padding: 12px 14px !important;
-  border: 1px solid #e2e8f0 !important;
-}
-.form-control:focus{
-  border-color: var(--brand) !important;
-  box-shadow: 0 0 0 0.2rem rgba(14,165,233,.15) !important;
-}
+/* ... keep your existing theme rules here ... */
 
 /* --------- Navbar --------- */
 .app-navbar{
@@ -82,9 +35,6 @@ html, body{
 .app-navbar .nav-link{ color: #fff !important; font-weight: 500; opacity:.95; }
 .app-navbar .nav-link:hover{ opacity: 1; }
 
-/* Ẩn navbar trên trang auth (login/register) */
-.navbar--hidden{ display:none; }
-
 /* --------- Footer --------- */
 .site-footer{
   background: #0b1220;
@@ -94,89 +44,33 @@ html, body{
   font-size: 14px;
 }
 
-/* --------- Auth pages --------- */
-.auth-bg{
-  min-height: 100vh;
-  background: linear-gradient(120deg, #4f46e5, #3b82f6);
-  display: grid;
-  place-items: center;
-  padding: 40px 12px;
-}
-.auth-card{
-  width: min(420px, 92vw);
-  padding: 28px 26px;
-  border-radius: 18px;
-  box-shadow: var(--shadow-md);
-  background: #fff;
-}
-.auth-title{
-  font-weight: 800;
-  color: #1e3a8a;
-}
-.auth-sub{
-  color: var(--muted);
-  font-size: 14px;
-}
+/* --------- Form controls --------- */
+/* keep your rules... */
 
-/* Headline trang chủ */
-.hero-title{
-  font-weight: 900;
-  line-height: 1.15;
-  letter-spacing: .2px;
+/* SAFETY: modal & dropdown — do NOT force display:block or extremely high z-index */
+.modal { /* bootstrap default: hidden until .show */
+  /* keep default; don't force block */
+  display: none;
 }
-.hero-muted{ color: var(--muted); }
-
-/* Tag mini */
-.badge-soft{
-  background: #e0f2fe;
-  color: #0369a1;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-weight: 600;
-  font-size: 12px;
-}
-
-/* FIX: modal/popover always on top and positioned correctly */
-.modal,
-.popover,
-.dropdown-menu {
-  z-index: 30000 !important;
-}
-
-.modal-backdrop {
-  z-index: 29990 !important;
-}
-
-/* ensure modal is fixed and centered */
-.modal {
-  position: fixed !important;
-  top: 8% !important;
-  left: 0;
-  right: 0;
-  margin: 0 auto;
+.modal.show {
   display: block;
 }
 
-/* if modal-dialog was pushed down, centre it visually */
-.modal .modal-dialog {
-  transform: translateY(0) !important;
-  margin: 0 auto;
+/* Let Bootstrap manage z-index for dropdowns and backdrops.
+   If you need to tweak, use reasonable values but avoid !important unless necessary. */
+.modal-backdrop {
+  z-index: 1050;
+}
+.dropdown-menu {
+  z-index: 1100;
 }
 
-/* If parent containers had overflow that hides modal, allow pointer events on navbar/footer */
-nav.navbar, footer {
-  pointer-events: auto;
+/* Hide known extension tags (non-destructive) */
+en2vi-host,
+savior-host {
+  display: none !important;
 }
 
-/* --- Modal & popover fixes --- */
-.modal, .popover, .dropdown-menu { z-index: 30000 !important; }
-.modal-backdrop { z-index: 29990 !important; }
-.modal { position: fixed !important; top: 8% !important; left: 0; right: 0; margin: 0 auto; display: block; }
-.modal .modal-dialog { transform: translateY(0) !important; margin: 0 auto; }
+/* If you had previous duplicate modal rules, they are removed here. */
 
-/* Cleanup overlay prevention */
-.modal-backdrop, .overlay, .backdrop, .mask-overlay { pointer-events: auto; }
-.dropdown-menu, .modal { z-index: 30000 !important; }
-
-/* Make direct auth links look nicer */
-.nav-auth-links .nav-link { margin-left: .6rem; background: rgba(255,255,255,0.06); padding: .35rem .6rem; border-radius:6px; color:#fff; }
+/* ... rest of your CSS ... */

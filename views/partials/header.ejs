@@ -7,24 +7,24 @@
 
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 
   <style>
+    /* Small header style */
     body { font-family: 'Inter', sans-serif; background:#f7fafc; }
-    .topbar {
-      background:#06c8f0;
-      padding:10px 0;
-      box-shadow:0 3px 8px rgba(0,0,0,.06);
-      z-index: 9999;
-      position: relative;
-    }
+    .topbar { background:#06c8f0; padding:10px 0; box-shadow:0 3px 8px rgba(0,0,0,.06); z-index: 9999; position: relative; }
     .brand { font-weight:700; color:#fff !important; text-decoration:none; }
-    .nav-link.text-white { color:#fff !important; font-weight:500; }
-    .dropdown-menu { z-index:999999; }
-    .dropdown-menu.show { display:block !important; }
-    .nav-auth-links .nav-link { margin-left: .6rem; background: rgba(255,255,255,0.06); padding: .35rem .6rem; border-radius:6px; color: #fff; }
-    .nav-auth-links .nav-link:hover { background: rgba(255,255,255,0.12); color:#fff; }
+
+    /* Safety overrides: don't force modal to be always visible; ensure pointer-events usable */
+    .modal { display: none; }
+    .modal.show { display: block; }
+    .modal-backdrop { z-index: 1050; }
+    .dropdown-menu { z-index: 1100; }
+
+    /* Ensure page responds to clicks */
+    body, nav, .container { pointer-events: auto !important; }
   </style>
 </head>
 
@@ -33,13 +33,11 @@
   <div class="container">
     <a class="navbar-brand brand" href="/">KHÁCH SẠN PHENIKAA</a>
 
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon" style="filter:invert(1)"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="mainNav">
-
-      <!-- ĐẨY MENU SANG BÊN PHẢI -->
       <ul class="navbar-nav ms-auto align-items-center">
 
         <% if (!currentUser || currentUser.role !== 'admin') { %>
@@ -48,12 +46,12 @@
         <% } %>
 
         <% if (currentUser) { %>
-          <!-- Đã đăng nhập: hiện dropdown user/admin -->
           <li class="nav-item dropdown ms-3">
-            <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button">
+            <!-- add data-bs-toggle so Bootstrap recognizes it if bootstrap.js loaded -->
+            <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <%= currentUser.username || currentUser.name || "Tài khoản" %>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end mt-2">
+            <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userDropdown">
               <li><a class="dropdown-item" href="/user/profile">Hồ sơ</a></li>
               <% if (currentUser.role === 'admin') { %>
                 <li><a class="dropdown-item" href="/admin/dashboard">Trang quản trị</a></li>
@@ -64,7 +62,6 @@
           </li>
 
         <% } else { %>
-          <!-- Chưa đăng nhập: hiện 2 link riêng (không trong dropdown) -->
           <li class="nav-item nav-auth-links ms-3 d-flex align-items-center">
             <a class="nav-link" href="/auth/login">Đăng nhập</a>
             <a class="nav-link" href="/auth/register">Đăng ký</a>
@@ -77,15 +74,47 @@
 </nav>
 
 <script>
-  // Toggle dropdown thủ công (không phụ thuộc vào Bootstrap JS)
-  document.addEventListener("click", function(e) {
-    const toggle = e.target.closest('.dropdown-toggle');
-    // close any opened dropdowns
-    document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
-    if (toggle) {
+  // Cleanup overlays that 3rd-party extension might inject and block clicks
+  function cleanupInjectedOverlays() {
+    try {
+      const selectors = ['#__en2vi-host', '#envi2-host', '#en2vi-host', '.savior-host', '.corom-element', '.overlay', '[data-savior-injected]'];
+      selectors.forEach(sel => document.querySelectorAll(sel).forEach(el => {
+        try { el.remove(); } catch(e) { el.style.display='none'; el.style.pointerEvents='none'; }
+      }));
+      document.body.classList.remove('modal-open');
+      document.body.style.pointerEvents = 'auto';
+    } catch(e){ console.warn('cleanupInjectedOverlays', e); }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    cleanupInjectedOverlays();
+
+    // If the view used the older id btnAddRoom, make alias addRoomBtn so main.js finds it
+    try {
+      const old = document.getElementById('btnAddRoom');
+      if (old && !document.getElementById('addRoomBtn')) {
+        old.id = 'addRoomBtn';
+        old.classList.add('add-room-btn');
+      }
+    } catch(e){}
+
+    // Robust dropdown fallback: toggle dropdown menus on click if bootstrap doesn't handle it
+    document.addEventListener('click', function(e) {
+      // don't conflict if bootstrap is present and handles it
+      if (window.bootstrap && window.bootstrap.Dropdown) return;
+      const t = e.target.closest('.dropdown-toggle');
+      if (!t) {
+        // if clicked outside any dropdown-toggle, close open menus
+        document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+        return;
+      }
       e.preventDefault();
-      const menu = toggle.parentElement.querySelector(".dropdown-menu");
-      if (menu) menu.classList.toggle("show");
-    }
+      const menu = t.parentElement.querySelector('.dropdown-menu');
+      if (!menu) return;
+      // toggle and close others
+      const open = menu.classList.contains('show');
+      document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+      if (!open) menu.classList.add('show');
+    });
   });
 </script>
