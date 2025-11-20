@@ -56,18 +56,41 @@
         e.preventDefault();
         removeKnownExtensionOverlays();
         const ds = btn.dataset || {};
-        const id = ds.id || ds.roomid || ds.roomId || ds.roomId || ds['room-id'] || ds['room-id'];
+        const id = ds.id || ds.roomid || ds.roomId || ds['room-id'] || ds['room-id'] || ds['roomId'];
         const form = document.getElementById('editRoomForm');
         if (form && id){
-          // set action if needed
-          try { form.action = '/admin/rooms/' + id + '?_method=PUT'; } catch(e){}
+          // ====== UPDATED: set action safely without query-string _method ======
+          try {
+            // Set to resource endpoint
+            form.action = '/admin/rooms/' + id;
+            // Ensure method is POST so the browser sends body (and middleware can read _method)
+            form.method = 'post';
+
+            // Ensure hidden input for _method exists (method-override may read from body)
+            let meth = form.querySelector('input[name="_method"]');
+            if (!meth) {
+              meth = document.createElement('input');
+              meth.type = 'hidden';
+              meth.name = '_method';
+              form.appendChild(meth);
+            }
+            meth.value = 'PUT';
+          } catch (e) { console.warn('set form action error', e); }
+          // ====== end updated block ======
+
           const setVal = (sel, v) => { const el=document.querySelector(sel); if(!el) return; if('value' in el) el.value = v; else el.textContent = v; };
           setVal('#editRoomId', id);
-          setVal('#editRoomNumber', ds.roomNumber || ds.number || '');
+          setVal('#editRoomNumber', ds.roomNumber || ds.number || ds['room-number'] || ds['roomNumber'] || '');
           setVal('#editRoomType', ds.type || '');
           setVal('#editRoomPrice', ds.price || '');
           setVal('#editRoomStatus', ds.status || '');
-          setVal('#editRoomLocation', ds.location || '');
+          // CHANGED: use description (textarea) instead of location
+          setVal('#editRoomDescription', ds.description || '');
+          // also set existingImage hidden field if present
+          const existingImgEl = document.querySelector('#editRoomExistingImage');
+          if (existingImgEl) {
+            existingImgEl.value = ds.image || '';
+          }
           const preview = document.getElementById('editRoomPreview');
           if (preview){
             if (ds.image){ preview.src = ds.image; preview.style.display='block'; } else { preview.src=''; preview.style.display='none'; }
@@ -88,7 +111,12 @@
       e.preventDefault();
       removeKnownExtensionOverlays();
       const form = document.getElementById('addRoomForm');
-      if (form) form.reset();
+      if (form) {
+        form.reset();
+        // Ensure add form method/action are correct
+        if (!form.method || form.method.toLowerCase() !== 'post') form.method = 'post';
+        if (!form.action) form.action = '/admin/rooms';
+      }
       const prev = document.getElementById('addRoomPreview') || document.getElementById('addRoomImagePreview');
       if (prev){ try{ prev.src=''; prev.style.display='none'; } catch(e){} }
       showModalById('addRoomModal');
@@ -119,11 +147,34 @@
     });
   }
 
+  // sanitize price input before submit
+  function sanitizePriceBeforeSubmit(formId, inputSelector) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+      try {
+        const input = form.querySelector(inputSelector);
+        if (!input || !input.value) return;
+        let v = input.value.trim().replace(/\s+/g, '');
+        if (v.indexOf('.') !== -1 && v.indexOf(',') !== -1) {
+          v = v.replace(/\./g, '').replace(/,/g, '.');
+        } else {
+          v = v.replace(/\./g, '').replace(/,/g, '.');
+        }
+        input.value = v;
+      } catch (err) { /* ignore */ }
+    }, { once: false });
+  }
+
   function initAll(){
     removeKnownExtensionOverlays();
     initEditRoomButtons();
     initAddRoomButton();
     initPreviewInputs();
+    // sanitize price inputs for add/edit forms
+    sanitizePriceBeforeSubmit('addRoomForm', 'input[name="price"]');
+    sanitizePriceBeforeSubmit('editRoomForm', 'input[name="price"]');
+
     // ensure dropdown fallback works if bootstrap missing
     try {
       if (!window.bootstrap) {

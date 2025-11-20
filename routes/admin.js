@@ -32,6 +32,33 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// ---------- Helper: parse price input ----------
+/**
+ * Accepts strings like:
+ *  "250.000" (thousands dot) -> 250000
+ *  "250,000" -> 250000
+ *  "250.5"  -> 250.5
+ *  "250,5"  -> 250.5
+ *  "250000" -> 250000
+ */
+function parsePriceInput(raw) {
+  if (raw === undefined || raw === null) return null;
+  let s = String(raw).trim();
+  if (!s) return null;
+  // Remove spaces
+  s = s.replace(/\s+/g, '');
+  // If both '.' and ',' present, assume '.' thousands and ',' decimal OR vice versa.
+  // Heuristic: remove dots (thousand separators) and convert comma to dot.
+  if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
+    s = s.replace(/\./g, '').replace(/,/g, '.');
+  } else {
+    // Otherwise remove dots (thousands) and convert comma to dot (decimal)
+    s = s.replace(/\./g, '').replace(/,/g, '.');
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
 // ========== DASHBOARD ==========
 router.get('/dashboard', async (req, res, next) => {
   try {
@@ -80,8 +107,9 @@ router.get('/rooms', async (req, res, next) => {
 router.post('/rooms', upload.single('image'), async (req, res, next) => {
   try {
     const { roomNumber, type, price, status, location } = req.body;
+    const parsedPrice = parsePriceInput(price);
     const image = req.file ? '/uploads/rooms/' + req.file.filename : (req.body.existingImage || '');
-    await Room.create({ roomNumber, type, price, status, location, image });
+    await Room.create({ roomNumber, type, price: parsedPrice, status, location, image });
     res.redirect('/admin/rooms');
   } catch (e) { next(e); }
 });
@@ -90,7 +118,26 @@ router.post('/rooms', upload.single('image'), async (req, res, next) => {
 router.post('/rooms/:id', upload.single('image'), async (req, res, next) => {
   try {
     const { roomNumber, type, price, status, location } = req.body;
-    const update = { roomNumber, type, price, status, location };
+    const parsedPrice = parsePriceInput(price);
+    const update = { roomNumber, type, price: parsedPrice, status, location };
+
+    if (req.file) {
+      update.image = '/uploads/rooms/' + req.file.filename;
+    } else if (req.body.existingImage) {
+      update.image = req.body.existingImage;
+    }
+
+    await Room.findByIdAndUpdate(req.params.id, update);
+    res.redirect('/admin/rooms');
+  } catch (e) { next(e); }
+});
+
+// PUT cập nhật phòng — hỗ trợ nếu method-override chuyển POST -> PUT
+router.put('/rooms/:id', upload.single('image'), async (req, res, next) => {
+  try {
+    const { roomNumber, type, price, status, location } = req.body;
+    const parsedPrice = parsePriceInput(price);
+    const update = { roomNumber, type, price: parsedPrice, status, location };
 
     if (req.file) {
       update.image = '/uploads/rooms/' + req.file.filename;
