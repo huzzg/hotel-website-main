@@ -12,23 +12,21 @@
   <link rel="stylesheet" href="/css/style.css">
 
   <style>
-    /* Small header style */
     body { font-family: 'Inter', sans-serif; background:#f7fafc; }
     .topbar { background:#06c8f0; padding:10px 0; box-shadow:0 3px 8px rgba(0,0,0,.06); z-index: 9999; position: relative; }
     .brand { font-weight:700; color:#fff !important; text-decoration:none; }
 
-    /* Safety overrides: don't force modal to be always visible; ensure pointer-events usable */
     .modal { display: none; }
     .modal.show { display: block; }
     .modal-backdrop { z-index: 1050; }
     .dropdown-menu { z-index: 1100; }
 
-    /* Ensure page responds to clicks */
     body, nav, .container { pointer-events: auto !important; }
   </style>
 </head>
 
 <body>
+
 <nav class="navbar navbar-expand-lg topbar">
   <div class="container">
     <a class="navbar-brand brand" href="/">KHÁCH SẠN PHENIKAA</a>
@@ -47,7 +45,6 @@
 
         <% if (currentUser) { %>
           <li class="nav-item dropdown ms-3">
-            <!-- add data-bs-toggle so Bootstrap recognizes it if bootstrap.js loaded -->
             <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <%= currentUser.username || currentUser.name || "Tài khoản" %>
             </a>
@@ -73,8 +70,10 @@
   </div>
 </nav>
 
+<!-- ⭐ mở vùng main *sau* navbar để footer được sticky mà không tạo khoảng trắng trên header -->
+<main class="site-main">
+
 <script>
-  // Cleanup overlays that 3rd-party extension might inject and block clicks
   function cleanupInjectedOverlays() {
     try {
       const selectors = ['#__en2vi-host', '#envi2-host', '#en2vi-host', '.savior-host', '.corom-element', '.overlay', '[data-savior-injected]'];
@@ -88,33 +87,5 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     cleanupInjectedOverlays();
-
-    // If the view used the older id btnAddRoom, make alias addRoomBtn so main.js finds it
-    try {
-      const old = document.getElementById('btnAddRoom');
-      if (old && !document.getElementById('addRoomBtn')) {
-        old.id = 'addRoomBtn';
-        old.classList.add('add-room-btn');
-      }
-    } catch(e){}
-
-    // Robust dropdown fallback: toggle dropdown menus on click if bootstrap doesn't handle it
-    document.addEventListener('click', function(e) {
-      // don't conflict if bootstrap is present and handles it
-      if (window.bootstrap && window.bootstrap.Dropdown) return;
-      const t = e.target.closest('.dropdown-toggle');
-      if (!t) {
-        // if clicked outside any dropdown-toggle, close open menus
-        document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
-        return;
-      }
-      e.preventDefault();
-      const menu = t.parentElement.querySelector('.dropdown-menu');
-      if (!menu) return;
-      // toggle and close others
-      const open = menu.classList.contains('show');
-      document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
-      if (!open) menu.classList.add('show');
-    });
   });
 </script>

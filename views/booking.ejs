@@ -1,35 +1,86 @@
-<!-- views/booking.ejs -->
 <%- include('partials/header') %>
-<div class="container mt-5 pt-5">
-  <h2>Đặt Phòng</h2>
-  <div class="row">
-    <% rooms.forEach(room => { %>
-      <div class="col-md-4 mb-4">
-        <div class="card h-100">
+
+<div class="container mt-5 pt-4">
+  <% if (!room) { %>
+    <div class="alert alert-warning">Không tìm thấy phòng.</div>
+  <% } else { %>
+    <div class="row">
+      <div class="col-lg-7">
+        <div class="card shadow-sm">
+          <img src="<%= room.image || '/images/room1.jpeg' %>" alt="room" style="width:100%; height:420px; object-fit:cover; border-top-left-radius: .5rem; border-top-right-radius: .5rem;">
           <div class="card-body">
-            <h5 class="card-title">Phòng <%= room.roomNumber %> - <%= room.type %></h5>
-            <p><strong>Giá:</strong> <%= room.price %>$/đêm</p>
-            <p><strong>Địa điểm:</strong> <%= room.location %></p>
-            <form action="/user/book" method="POST">
-              <input type="hidden" name="roomId" value="<%= room._id %>">
-              <div class="mb-2">
-                <label>Check-in</label>
-                <input type="date" name="checkIn" class="form-control" required>
-              </div>
-              <div class="mb-2">
-                <label>Check-out</label>
-                <input type="date" name="checkOut" class="form-control" required>
-              </div>
-              <div class="mb-2">
-                <label>Mã giảm giá</label>
-                <input type="text" name="discountCode" class="form-control" placeholder="VD: SALE10">
-              </div>
-              <button type="submit" class="btn btn-primary w-100">Đặt ngay</button>
-            </form>
+            <h3 class="fw-bold mb-1"><%= room.name || (room.type + ' - ' + room.roomNumber) %></h3>
+            <div class="text-muted mb-3"><%= room.type %></div>
+            <p><%= room.description || 'Chưa có mô tả cho phòng này.' %></p>
+
+            <div class="d-flex gap-3 align-items-center my-3">
+              <div class="fs-4 text-primary fw-bold"><%= (room.price || 0).toLocaleString('vi-VN') %> đ/đêm</div>
+              <div class="text-muted">Trạng thái: <span class="badge bg-<%= room.status === 'available' ? 'success' : (room.status==='booked'?'secondary':'warning') %>"><%= room.status %></span></div>
+            </div>
           </div>
         </div>
       </div>
-    <% }) %>
-  </div>
+
+      <div class="col-lg-5">
+        <div class="card shadow-sm p-3">
+          <h5 class="mb-3">Đặt phòng</h5>
+
+          <form id="bookRoomForm" action="/user/book" method="POST">
+            <input type="hidden" name="roomId" value="<%= room._id %>">
+
+            <div class="mb-2">
+              <label class="form-label small">Check-in</label>
+              <input type="date" name="checkIn" class="form-control" required>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small">Check-out</label>
+              <input type="date" name="checkOut" class="form-control" required>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small">Số khách</label>
+              <input type="number" name="guests" class="form-control" min="1" value="1">
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small">Mã giảm giá (nếu có)</label>
+              <input type="text" name="discountCode" class="form-control" placeholder="VD: SALE10">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small">Tổng tạm tính</label>
+              <div id="previewTotal" class="fw-semibold text-primary"><%= (room.price || 0).toLocaleString('vi-VN') %> đ</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Đặt ngay</button>
+          </form>
+
+          <script>
+            // client preview tổng tiền theo ngày
+            (function(){
+              const form = document.getElementById('bookRoomForm');
+              const price = <%= Number(room.price || 0) %>;
+              const preview = document.getElementById('previewTotal');
+              function update(){
+                try {
+                  const ci = form.querySelector('[name="checkIn"]').value;
+                  const co = form.querySelector('[name="checkOut"]').value;
+                  if(!ci || !co) { preview.textContent = (price).toLocaleString('vi-VN') + ' đ'; return; }
+                  const days = Math.max(1, Math.round((new Date(co) - new Date(ci))/(1000*60*60*24)));
+                  const total = price * days;
+                  preview.textContent = total.toLocaleString('vi-VN') + ' đ';
+                } catch(e){}
+              }
+              form.addEventListener('input', update);
+              update();
+            })();
+          </script>
+
+        </div>
+      </div>
+    </div>
+  <% } %>
 </div>
+
 <%- include('partials/footer') %>

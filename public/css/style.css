@@ -1,76 +1,143 @@
-/* ===========================
-   Theme – Hotel Phenikaa (cleaned)
-   =========================== */
+/* -------------------- RESET & CORE -------------------- */
 
-:root{
-  --brand: #0ea5e9;
-  --brand-dark: #0284c7;
-  --ink: #0f172a;
-  --ink-2: #334155;
-  --muted: #64748b;
-  --bg: #f8fafc;
-  --card: #ffffff;
-  --radius: 14px;
-  --radius-sm: 10px;
-  --shadow-sm: 0 6px 20px rgba(2, 132, 199, .08);
-  --shadow-md: 0 10px 30px rgba(2, 132, 199, .12);
-}
-
-html, body{
-  margin:0; padding:0;
-  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
-  color: var(--ink);
-  background: var(--bg);
-}
-
-/* ... keep your existing theme rules here ... */
-
-/* --------- Navbar --------- */
-.app-navbar{
-  background: var(--brand);
-  border: 0;
+html, body {
+  height: 100%;
   margin: 0;
-}
-.app-navbar .navbar-brand{ font-weight: 800; letter-spacing: .3px; }
-.app-navbar .nav-link{ color: #fff !important; font-weight: 500; opacity:.95; }
-.app-navbar .nav-link:hover{ opacity: 1; }
-
-/* --------- Footer --------- */
-.site-footer{
-  background: #0b1220;
-  color: #cbd5e1;
-  padding: 24px 0;
-  margin-top: 48px;
-  font-size: 14px;
+  padding: 0;
+  background: #f6fbfc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* --------- Form controls --------- */
-/* keep your rules... */
-
-/* SAFETY: modal & dropdown — do NOT force display:block or extremely high z-index */
-.modal { /* bootstrap default: hidden until .show */
-  /* keep default; don't force block */
-  display: none;
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color: #153544;
+  line-height: 1.4;
 }
-.modal.show {
+
+/* ensure header/footer + main layout */
+.site-main { flex: 1 0 auto; }
+.site-main .container { max-width: 1180px; margin: 0 auto; padding: 22px 18px; box-sizing: border-box; }
+
+/* -------------------- NAVBAR -------------------- */
+
+.topbar, nav.navbar, .navbar {
+  margin: 0;
+  padding: 12px 0;
+  background: #05c6e8;
+  box-shadow: 0 3px 8px rgba(4,20,35,0.06);
+}
+.navbar .nav-link { color: #ffffff !important; font-weight: 600; }
+
+/* -------------------- SEARCH CARD STYLES (NEW, đẹp hơn) -------------------- */
+
+.card.search-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), #ffffff);
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid rgba(19,53,68,0.04);
+  box-shadow: 0 10px 30px rgba(2,20,40,0.06);
+}
+
+/* create inner grid spacing for form */
+.search-inner .form-label {
+  font-size: 0.9rem;
+  color: #577a87;
+  margin-bottom: 6px;
   display: block;
 }
 
-/* Let Bootstrap manage z-index for dropdowns and backdrops.
-   If you need to tweak, use reasonable values but avoid !important unless necessary. */
-.modal-backdrop {
-  z-index: 1050;
+/* input and selects */
+.card.search-card .form-control,
+.card.search-card .form-select {
+  border-radius: 10px;
+  border: 1px solid #e6eef2;
+  padding: 10px 12px;
+  height: 46px;
+  box-shadow: none;
+  background: #fff;
+  transition: box-shadow .18s ease, transform .12s ease;
 }
-.dropdown-menu {
-  z-index: 1100;
+.card.search-card .form-control:focus,
+.card.search-card .form-select:focus {
+  box-shadow: 0 6px 18px rgba(6,135,165,0.08);
+  transform: translateY(-1px);
+  outline: none;
 }
 
-/* Hide known extension tags (non-destructive) */
-en2vi-host,
-savior-host {
-  display: none !important;
+/* search button */
+.btn-accent {
+  background: linear-gradient(180deg,#19d0e9,#06c8e0);
+  border: none;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(6,200,220,0.12);
+  border-radius: 10px;
+  padding: 12px 10px;
+  min-width: 62px;
+}
+.btn-accent:active { transform: translateY(1px); box-shadow: 0 6px 12px rgba(6,200,220,0.09); }
+
+/* taller button with two-line text */
+.btn-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+  line-height: 1;
 }
 
-/* If you had previous duplicate modal rules, they are removed here. */
+/* input with small calendar icon overlay */
+.input-with-icon {
+  position: relative;
+}
+.input-with-icon .icon-calendar {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.7;
+  font-size: 16px;
+}
 
-/* ... rest of your CSS ... */
+/* make rows consistent on small screens */
+@media (max-width: 767px) {
+  .card.search-card { padding: 14px; border-radius: 12px; }
+  .btn-search { padding: 10px 8px; }
+}
+
+/* -------------------- ROOM CARDS (keeps existing look but slightly refined) -------------------- */
+
+.room-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(10,20,30,0.04);
+  box-shadow: 0 6px 18px rgba(4,20,35,0.04);
+}
+.room-card .card-body { padding: 18px; }
+.room-card .card-title { margin-bottom: 6px; font-weight: 700; color: #10323a; }
+
+/* -------------------- FOOTER -------------------- */
+
+.site-footer {
+  background: #0b1522;
+  color: #fff;
+  padding: 18px 0;
+  text-align: center;
+  margin-top: 0;
+}
+
+/* small helpers */
+.page-title { margin-bottom: 18px; font-weight: 700; color: #13343f; }
+
+/* -------------------- SMALL TWEAKS & RESPONSIVE -------------------- */
+
+@media (max-width: 1199px) { .site-main .container { max-width: 1000px; } }
+@media (max-width: 991px)  { .site-main .container { max-width: 720px; } }
+@media (max-width: 767px)  { .site-main .container { padding-left: 12px; padding-right: 12px; } }

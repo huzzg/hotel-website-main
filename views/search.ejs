@@ -1,93 +1,106 @@
 <%- include('partials/header') %>
 
-<section class="py-4 bg-light">
-  <div class="container">
-    <h1 class="h3 fw-bold mb-3">Tìm kiếm phòng</h1>
+<div class="container mt-4">
+  <h2 class="page-title">Tìm kiếm phòng</h2>
 
-    <form class="card shadow-sm p-3 mb-4" action="/search" method="GET">
-      <div class="row g-3 align-items-end">
+  <!-- SEARCH CARD -->
+  <form id="searchForm" method="get" action="/search" class="card search-card mb-4 shadow-lg">
+    <div class="search-inner">
+      <div class="row gx-3 gy-3 align-items-end">
 
-        <div class="col-md-4">
-          <label class="form-label">Từ khóa (tên/mã/loại/địa điểm)</label>
-          <input type="text" class="form-control" name="q" value="<%= (query && query.q) || '' %>" placeholder="Deluxe, D101...">
+        <div class="col-lg-5 col-md-12">
+          <label class="form-label">Từ khóa (tên/mã/loại)</label>
+          <input class="form-control" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Deluxe, D101...">
         </div>
 
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-6">
           <label class="form-label">Loại phòng</label>
           <select class="form-select" name="type">
-            <option value="">Tất cả</option>
-            <option value="Standard" <%= query && query.type==='Standard' ? 'selected' : '' %>>Standard</option>
-            <option value="Superior" <%= query && query.type==='Superior' ? 'selected' : '' %>>Superior</option>
-            <option value="Deluxe"   <%= query && query.type==='Deluxe'   ? 'selected' : '' %>>Deluxe</option>
-            <option value="Suite"    <%= query && query.type==='Suite'    ? 'selected' : '' %>>Suite</option>
+            <option value="" <%= (type === '') ? 'selected' : '' %>>Tất cả</option>
+            <option value="Standard" <%= type === 'Standard' ? 'selected' : '' %>>Standard</option>
+            <option value="Superior" <%= type === 'Superior' ? 'selected' : '' %>>Superior</option>
+            <option value="Deluxe" <%= type === 'Deluxe' ? 'selected' : '' %>>Deluxe</option>
+            <option value="Suite" <%= type === 'Suite' ? 'selected' : '' %>>Suite</option>
           </select>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-6">
           <label class="form-label">Giá từ</label>
-          <input type="number" class="form-control" name="min" value="<%= (query && query.min) || '' %>" placeholder="500000">
+          <input class="form-control" name="min" inputmode="numeric" value="<%= typeof min !== 'undefined' ? min : '' %>" placeholder="Ví dụ: 100000">
         </div>
 
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-6">
           <label class="form-label">Giá đến</label>
-          <input type="number" class="form-control" name="max" value="<%= (query && query.max) || '' %>" placeholder="2000000">
+          <input class="form-control" name="max" inputmode="numeric" value="<%= typeof max !== 'undefined' ? max : '' %>" placeholder="Ví dụ: 500000">
         </div>
 
-        <div class="col-md-3">
+        <div class="col-lg-1 col-md-6 d-flex justify-content-lg-end">
+          <button type="submit" class="btn btn-accent btn-search w-100">Tìm<br>phòng</button>
+        </div>
+
+        <!-- second row -->
+        <div class="col-lg-3 col-md-6">
           <label class="form-label">Nhận phòng</label>
-          <input type="date" class="form-control" name="checkIn" value="<%= (query && query.checkIn) || '' %>">
+          <div class="input-with-icon">
+            <input class="form-control" type="date" name="checkIn" value="<%= typeof checkIn !== 'undefined' ? checkIn : '' %>">
+            <span class="icon-calendar">📅</span>
+          </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-lg-3 col-md-6">
           <label class="form-label">Trả phòng</label>
-          <input type="date" class="form-control" name="checkOut" value="<%= (query && query.checkOut) || '' %>">
+          <div class="input-with-icon">
+            <input class="form-control" type="date" name="checkOut" value="<%= typeof checkOut !== 'undefined' ? checkOut : '' %>">
+            <span class="icon-calendar">📅</span>
+          </div>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-lg-3 col-md-6">
           <label class="form-label">Sắp xếp</label>
           <select class="form-select" name="sort">
-            <option value="priceAsc"  <%= query && query.sort==='priceAsc'  ? 'selected' : '' %>>Giá tăng dần</option>
-            <option value="priceDesc" <%= query && query.sort==='priceDesc' ? 'selected' : '' %>>Giá giảm dần</option>
-            <option value="nameAsc"   <%= query && query.sort==='nameAsc'   ? 'selected' : '' %>>Tên A → Z</option>
-            <option value="nameDesc"  <%= query && query.sort==='nameDesc'  ? 'selected' : '' %>>Tên Z → A</option>
+            <option value="priceAsc" <%= sort==='priceAsc' ? 'selected' : '' %>>Giá tăng dần</option>
+            <option value="priceDesc" <%= sort==='priceDesc' ? 'selected' : '' %>>Giá giảm dần</option>
+            <option value="newest" <%= sort==='newest' ? 'selected' : '' %>>Mới nhất</option>
           </select>
         </div>
 
-        <div class="col-md-2">
-          <button class="btn btn-primary w-100">Tìm phòng</button>
+        <div class="col-12">
+          <% const hasQuery = (typeof q !== 'undefined' && String(q).trim() !== '') || (typeof type !== 'undefined' && String(type).trim() !== '') || (typeof min !== 'undefined' && String(min).trim() !== '') || (typeof max !== 'undefined' && String(max).trim() !== '') || (typeof checkIn !== 'undefined' && checkIn) || (typeof checkOut !== 'undefined' && checkOut); %>
+          <% if (!hasQuery) { %>
+            <div class="alert alert-info mt-3">Hãy nhập điều kiện và bấm <strong>Tìm phòng</strong> để hiển thị kết quả.</div>
+          <% } %>
         </div>
+
       </div>
-    </form>
-
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h2 class="h5 fw-bold mb-0">Kết quả</h2>
-      <span class="badge text-bg-info">Tìm thấy <%= total || 0 %> phòng</span>
     </div>
+  </form>
 
-    <% if ((rooms || []).length === 0) { %>
-      <div class="alert alert-warning">Chưa có kết quả phù hợp. Hãy thử thay đổi bộ lọc.</div>
-    <% } %>
-
+  <!-- RESULTS -->
+  <% if (typeof rooms !== 'undefined' && rooms && rooms.length > 0) { %>
+    <h4 class="mb-3">Kết quả (<%= rooms.length %> phòng)</h4>
     <div class="row g-4">
-      <% (rooms || []).forEach(function(r) { %>
-        <div class="col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
-            <img src="/images/room1.jpeg" class="card-img-top" alt="<%= r.name || r.type %>">
+      <% rooms.forEach(function(room){ 
+           let img = room.image || '';
+           if (img && img[0] !== '/') img = '/' + img;
+      %>
+        <div class="col-lg-6">
+          <div class="card room-card h-100">
+            <a href="/user/room/<%= room._id %>">
+              <img src="<%= img || '/images/default-avatar.jpg' %>" class="card-img-top" alt="room image" style="height:260px; object-fit:cover;">
+            </a>
             <div class="card-body">
-              <h5 class="card-title mb-1"><%= r.name || (r.type + ' - ' + (r.code || '')) %></h5>
-              <div class="small text-muted mb-2">
-                <%= r.city || '—' %> · <%= r.type || '—' %>
-              </div>
-              <div class="fw-semibold text-primary">Giá: <%= (r.price || 0).toLocaleString('vi-VN') %> đ/đêm</div>
-            </div>
-            <div class="card-footer bg-white border-0">
-              <a href="/booking?id=<%= r._id %>" class="btn btn-outline-primary w-100">Đặt ngay</a>
+              <a href="/user/room/<%= room._id %>" class="text-decoration-none text-dark">
+                <h5 class="card-title mb-1"><%= room.type %> - <%= room.roomNumber || '' %></h5>
+              </a>
+              <p class="text-primary mb-3"><strong>Giá: <%= (room.price || 0).toLocaleString('vi-VN') %> đ/đêm</strong></p>
+              <a href="/user/room/<%= room._id %>" class="btn btn-outline-primary w-100">Xem & Đặt</a>
             </div>
           </div>
         </div>
       <% }) %>
     </div>
-  </div>
-</section>
+  <% } %>
+
+</div>
 
 <%- include('partials/footer') %>

@@ -1,85 +1,102 @@
-const express = require("express");
+// routes/search.js
+const express = require('express');
 const router = express.Router();
-const Room = require("../models/Room");
-const checkRoomAvailability = require("../utils/checkRoomAvailability");
 
-// SEARCH PAGE
-router.get("/", async (req, res) => {
+const Room = require('../models/Room');
+const Booking = require('../models/Booking');
+const Discount = require('../models/Discount');
+
+// helper to parse price param strings -> number (handle "250.000" / "250,5" / "250000")
+function parsePriceParam(val) {
+  if (val === undefined || val === null) return null;
+  let s = String(val).trim();
+  if (!s) return null;
+  s = s.replace(/\s+/g, '');
+  if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
+    s = s.replace(/\./g, '').replace(/,/g, '.');
+  } else {
+    s = s.replace(/\./g, '').replace(/,/g, '.');
+  }
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+// GET /search
+router.get('/', async (req, res, next) => {
   try {
-    const {
-      q,
-      type,
-      price_min,
-      price_max,
-      checkIn,
-      checkOut,
-      sort,
-      page
-    } = req.query;
+    // read raw query params (strings)
+    const q = typeof req.query.q !== 'undefined' ? String(req.query.q).trim() : '';
+    const type = typeof req.query.type !== 'undefined' ? String(req.query.type).trim() : '';
+    const minRaw = typeof req.query.min !== 'undefined' ? String(req.query.min).trim() : '';
+    const maxRaw = typeof req.query.max !== 'undefined' ? String(req.query.max).trim() : '';
+    const checkIn = typeof req.query.checkIn !== 'undefined' ? String(req.query.checkIn).trim() : '';
+    const checkOut = typeof req.query.checkOut !== 'undefined' ? String(req.query.checkOut).trim() : '';
+    const sort = typeof req.query.sort !== 'undefined' ? String(req.query.sort).trim() : '';
 
-    const filter = {};
+    // parse numeric min/max for query
+    const min = parsePriceParam(minRaw);
+    const max = parsePriceParam(maxRaw);
 
-    // TÌM THEO TỪ KHÓA
-    if (q && q.trim()) {
-      const regex = new RegExp(q.trim(), "i");
-      filter.$or = [
-        { name: regex },
-        { description: regex },
-        { code: regex }
-      ];
-    }
+    // decide if user actually searched (otherwise we won't return rooms)
+    const hasQuery = (q && q.length > 0) || (type && type.length > 0) || (min !== null) || (max !== null) || (checkIn && checkIn.length > 0) || (checkOut && checkOut.length > 0);
 
-    // LỌC THEO LOẠI PHÒNG (KHÔNG CÒN LOCATION)
-    if (type && type.trim()) filter.type = type.trim();
+    let rooms = [];
 
-    // GIÁ
-    if (price_min) filter.price = { ...(filter.price || {}), $gte: Number(price_min) };
-    if (price_max) filter.price = { ...(filter.price || {}), $lte: Number(price_max) };
+    if (hasQuery) {
+      const filter = {};
 
-    // PHÒNG ACTIVE
-    filter.isActive = true;
-
-    // SORT
-    let sortQuery = {};
-    if (sort === "price_asc") sortQuery.price = 1;
-    else if (sort === "price_desc") sortQuery.price = -1;
-    else if (sort === "name_asc") sortQuery.name = 1;
-    else if (sort === "name_desc") sortQuery.name = -1;
-    else sortQuery.createdAt = -1;
-
-    // PAGINATION
-    const perPage = 9;
-    const currentPage = Math.max(1, parseInt(page) || 1);
-
-    const allRooms = await Room.find(filter).sort(sortQuery);
-
-    // CHECK AVAILABILITY (nếu có chọn ngày)
-    let availableRooms = [];
-    if (checkIn && checkOut) {
-      for (let room of allRooms) {
-        const free = await checkRoomAvailability(room._id, checkIn, checkOut);
-        if (free) availableRooms.push(room);
+      if (q) {
+        // basic regex search on roomNumber/type/description
+        const terms = q.split(/\s+/).map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const re = new RegExp(terms.join('|'), 'i');
+        filter.$or = [
+          { type: re },
+          { roomNumber: re },
+          { description: re }
+        ];
       }
-    } else {
-      availableRooms = allRooms;
+
+      if (type) filter.type = type;
+
+      if (min !== null || max !== null) {
+        filter.price = {};
+        if (min !== null) filter.price.$gte = min;
+        if (max !== null) filter.price.$lte = max;
+      }
+
+      // Note: availability check (using Booking) can be added later
+
+      let qBuilder = Room.find(filter).lean();
+
+      if (sort === 'priceAsc') qBuilder = qBuilder.sort({ price: 1 });
+      else if (sort === 'priceDesc') qBuilder = qBuilder.sort({ price: -1 });
+      else if (sort === 'newest') qBuilder = qBuilder.sort({ createdAt: -1 });
+
+      rooms = await qBuilder.exec();
+
+      // normalize image path (ensure leading slash)
+      rooms = rooms.map(r => {
+        if (r && r.image && typeof r.image === 'string') {
+          if (r.image.length && r.image[0] !== '/') r.image = '/' + r.image;
+        }
+        return r;
+      });
     }
 
-    const total = availableRooms.length;
-    const paginatedRooms = availableRooms.slice(
-      (currentPage - 1) * perPage,
-      currentPage * perPage
-    );
-
-    return res.render("search", {
-      rooms: paginatedRooms,
-      total,
-      page: currentPage,
-      pages: Math.ceil(total / perPage),
-      query: req.query
+    // render with default variables so template never gets undefined
+    res.render('search', {
+      title: 'Tìm phòng',
+      rooms: rooms || [],
+      q: q || '',
+      type: type || '',
+      min: minRaw || '',
+      max: maxRaw || '',
+      checkIn: checkIn || '',
+      checkOut: checkOut || '',
+      sort: sort || ''
     });
   } catch (err) {
-    console.error("Search Error:", err);
-    return res.status(500).send("Server Error");
+    next(err);
   }
 });
 

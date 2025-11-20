@@ -5,7 +5,10 @@ const bookingSchema = new mongoose.Schema({
   roomId: { type: mongoose.Schema.Types.ObjectId, ref: 'Room', required: true },
   checkIn: { type: Date, required: true },
   checkOut: { type: Date, required: true },
-  status: { type: String, default: 'pending' }
-});
+  guests: { type: Number, default: 1 },
+  totalPrice: { type: Number, default: 0 },
+  discountApplied: { type: Number, default: 0 },
+  status: { type: String, default: 'pending' } // pending | paid | confirmed | cancelled
+}, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);

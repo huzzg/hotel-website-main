@@ -1,34 +1,33 @@
 <%- include('partials/header') %>
 <style>
-  .payment-container { max-width: 600px; margin: 50px auto; }
-  .payment-form { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: slideUp 1s ease-out; }
-  @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .payment-container { max-width: 700px; margin: 50px auto; }
+  .payment-form { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
 </style>
+
 <div class="payment-container">
   <h2 class="text-center mb-4">Thanh Toán</h2>
   <div class="payment-form">
-    <h4 class="mb-3">Tổng Số Tiền: $<%= amount %></h4>
-    <form action="/payment/<%= booking._id %>" method="POST">
+    <h5>Booking: <%= booking._id %></h5>
+    <p>Phòng: <strong><%= booking.roomId.type %> - <%= booking.roomId.roomNumber %></strong></p>
+    <p>Tổng cần thanh toán: <strong class="text-primary"><%= (booking.totalPrice || 0).toLocaleString('vi-VN') %> đ</strong></p>
+
+    <!-- nếu bạn chưa kết nối Stripe, form này sẽ gọi route giả lập /user/pay/:bookingId -->
+    <form action="/user/pay/<%= booking._id %>" method="POST">
       <div class="mb-3">
-        <label class="form-label">Thông Tin Thẻ</label>
-        <div id="card-element" class="form-control form-control-lg" style="min-height: 50px;"></div>
-        <div id="card-errors" role="alert" class="text-danger mt-2"></div>
+        <label class="form-label">Chọn phương thức</label>
+        <select class="form-select" name="method">
+          <option value="manual">Thanh toán thử (offline)</option>
+          <option value="card">Thẻ (Stripe)</option>
+        </select>
       </div>
-      <button type="submit" class="btn btn-hotel w-100">Thanh Toán Ngay</button>
+
+      <div class="mb-3">
+        <button class="btn btn-primary w-100" type="submit">Xác nhận thanh toán</button>
+      </div>
     </form>
+
+    <div class="text-muted small">Lưu ý: đây là trang thanh toán mẫu — bạn có thể tích hợp Stripe/Paypal sau.</div>
   </div>
 </div>
-<script src="https://js.stripe.com/v3/"></script>
-<script>
-  const stripe = Stripe('pk_test_...'); // Thay bằng public key của bạn
-  const elements = stripe.elements();
-  const cardElement = elements.create('card');
-  cardElement.mount('#card-element');
 
-  const cardErrors = document.getElementById('card-errors');
-  cardElement.addEventListener('change', ({ error }) => {
-    if (error) cardErrors.textContent = error.message;
-    else cardErrors.textContent = '';
-  });
-</script>
 <%- include('partials/footer') %>
