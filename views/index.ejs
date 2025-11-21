@@ -16,6 +16,55 @@
     .discover-grid { flex-direction:column; }
     .discover-img { height:220px; }
   }
+
+  /* ===== Discounts styles embedded here so index loads correctly if css not updated yet ===== */
+  .discounts-section {
+    padding: 36px 0 18px;
+    background: transparent;
+  }
+  .discounts-section .section-title {
+    color: #1778ff;
+    font-size: 26px;
+    margin-bottom: 18px;
+    font-weight: 700;
+  }
+  .discount-cards {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .discount-card {
+    width: 320px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(20,45,57,0.06);
+    overflow: hidden;
+    border: 1px solid rgba(20,45,57,0.04);
+  }
+  .discount-inner {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .discount-code { font-size: 18px; font-weight:700; color:#0f6fa8; }
+  /* sửa: chữ phần trăm trắng, đặt nền gradient */
+  .discount-percent {
+    background: linear-gradient(90deg,#00c3ff,#0078ff);
+    color: #ffffff;
+    font-size:14px;
+    font-weight:800;
+    padding: 8px 12px;
+    border-radius: 8px;
+    width: 72px;
+    text-align: center;
+  }
+  .discount-dates { color:#6b7b85; font-size:13px; }
+  .discount-cta { margin-top:10px; display:flex; justify-content:flex-end; }
+  .btn-apply { cursor:pointer; padding:8px 12px; border-radius:6px; border:none; background:#0ea5e9; color:#fff; }
+  .btn-apply:active { transform:translateY(1px); }
+  .no-discounts { color:#6b7280; padding:12px 0; }
+
 </style>
 
 <section class="container py-5">
@@ -69,6 +118,36 @@
     </div>
   </div>
 </section>
+
+<!-- ======= ƯU ĐÃI CỦA CHÚNG TÔI (được chèn ở đây) ======= -->
+<section class="discounts-section container">
+  <div>
+    <h3 class="section-title">Ưu đãi của chúng tôi</h3>
+
+    <% if (typeof discounts !== 'undefined' && discounts && discounts.length) { %>
+      <div class="discount-cards">
+        <% discounts.forEach(function(dc){ %>
+          <div class="discount-card">
+            <div class="discount-inner">
+              <div class="discount-percent"><%= dc.percent %>%</div>
+              <div class="discount-code">Mã: <strong><%= (dc.code || dc.name || '').toUpperCase() %></strong></div>
+              <div class="discount-dates">
+                <% if (dc.startDate) { %> Từ: <%= new Date(dc.startDate).toLocaleDateString('vi-VN') %> <% } %>
+                <% if (dc.endDate) { %> &nbsp;•&nbsp; Đến: <%= new Date(dc.endDate).toLocaleDateString('vi-VN') %> <% } %>
+              </div>
+              <div class="discount-cta">
+                <button class="btn-apply" data-code="<%= dc.code %>">Sao chép mã</button>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="no-discounts">Hiện chưa có ưu đãi nào. Hãy quay lại sau nhé.</div>
+    <% } %>
+  </div>
+</section>
+<!-- ======= END ƯU ĐÃI ======= -->
 
 <!-- Khám phá theo loại phòng -->
 <section class="discover-section">
@@ -202,5 +281,23 @@
     if(inEl) inEl.min = today;
     if(outEl) outEl.min = today;
     if(inEl && outEl) inEl.addEventListener('change', ()=> outEl.min = inEl.value || today);
+
+    // Clipboard copy for discount codes
+    document.addEventListener('click', function(e){
+      const el = e.target;
+      if (el && el.classList.contains('btn-apply')) {
+        const code = el.getAttribute('data-code');
+        if (!code) return;
+        navigator.clipboard && navigator.clipboard.writeText(code).then(()=>{
+          const old = el.innerText;
+          el.innerText = 'Đã sao chép';
+          setTimeout(()=> el.innerText = old, 1400);
+        }).catch(err=>{
+          console.error('Copy failed', err);
+          alert('Không thể sao chép tự động, vui lòng sao chép thủ công: ' + code);
+        });
+      }
+    });
+
   })();
 </script>

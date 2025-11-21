@@ -222,3 +222,59 @@ body {
 
 /* little cosmetic helpers for admin tables/modal */
 .alert-inline { margin-bottom: 12px; }
+
+/* ---------- thêm style cho khu ƯU ĐÃI ---------- */
+.discounts-section {
+  padding: 40px 0;
+  background: transparent;
+}
+.discounts-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.discounts-title {
+  font-size: 26px;
+  color: #0e62ff;
+  margin-bottom: 18px;
+  font-weight: 700;
+}
+.discounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.discount-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(23, 43, 77, 0.06);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+  overflow: hidden;
+}
+.discount-card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(23, 43, 77, 0.12); }
+.discount-code { font-size: 18px; font-weight: 700; letter-spacing: 0.6px; color: #111827; }
+.discount-desc { margin-top: 8px; color: #4b5563; font-size: 14px; }
+.discount-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.discount-percent {
+  background: linear-gradient(90deg, #00c3ff, #0078ff);
+  color: #ffffff !important;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 15px;
+  display: inline-block;
+
+  /* giúp chữ trắng không bị ảnh hưởng bởi gradient */
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.20);
+}
+.discount-exp { color: #6b7280; font-size: 13px; }
+@media (max-width: 640px) {
+  .discounts-title { font-size: 22px; }
+  .discount-card { padding: 14px; }
+}

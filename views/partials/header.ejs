@@ -50,6 +50,9 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="userDropdown">
               <li><a class="dropdown-item" href="/user/profile">Hồ sơ</a></li>
+              <% if (currentUser.role === 'user') { %>
+                <li><a class="dropdown-item" href="/views/history.ejs">Lịch sử đặt phòng</a></li>
+              <% } %>
               <% if (currentUser.role === 'admin') { %>
                 <li><a class="dropdown-item" href="/admin/dashboard">Trang quản trị</a></li>
               <% } %>

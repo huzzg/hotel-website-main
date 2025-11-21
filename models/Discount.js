@@ -1,43 +1,22 @@
-const mongoose = require("mongoose");
+// models/Discount.js
+const mongoose = require('mongoose');
 
-function parseVNDate(str) {
-  if (!str) return null;
-  // format dd/mm/yyyy
-  const parts = str.split("/");
-  if (parts.length !== 3) return null;
+const DiscountSchema = new mongoose.Schema({
+  code: { type: String, required: true, unique: true, trim: true, uppercase: true },
+  percent: { type: Number, required: true, min: 0, max: 100 },
+  startDate: { type: Date, default: null }, // nếu null => bắt đầu ngay
+  endDate: { type: Date, default: null },   // nếu null => vô hạn
+  active: { type: Boolean, default: true }, // bật/tắt mã
+}, {
+  timestamps: true
+});
 
-  const [d, m, y] = parts.map(Number);
-  if (!d || !m || !y) return null;
+// helper: kiểm tra mã có hiệu lực tại thời điểm now
+DiscountSchema.methods.isActiveNow = function(now = new Date()) {
+  if (!this.active) return false;
+  if (this.startDate && this.startDate > now) return false;
+  if (this.endDate && this.endDate < now) return false;
+  return true;
+};
 
-  return new Date(y, m - 1, d);
-}
-
-const DiscountSchema = new mongoose.Schema(
-  {
-    code: { type: String, required: true, unique: true },
-    percent: { type: Number, required: true },
-
-    startDate: {
-      type: Date,
-      set: (val) => {
-        if (!val) return null;
-        if (val instanceof Date) return val;
-        return parseVNDate(val);
-      },
-    },
-
-    endDate: {
-      type: Date,
-      set: (val) => {
-        if (!val) return null;
-        if (val instanceof Date) return val;
-        return parseVNDate(val);
-      },
-    },
-
-    active: { type: Boolean, default: true },
-  },
-  { timestamps: true }
-);
-
-module.exports = mongoose.model("Discount", DiscountSchema);
+module.exports = mongoose.model('Discount', DiscountSchema);
