@@ -203,39 +203,159 @@ router.post('/users/:id/toggle', async (req, res, next) => {
 // ========== DISCOUNTS ==========
 router.get('/discounts', async (req, res, next) => {
   try {
-    const discounts = await Discount.find({}).sort({ createdAt: -1 });
-    res.render('admin-discounts', { title: 'Admin • Mã giảm giá', discounts });
-  } catch (e) { next(e); }
+    const discounts = await Discount.find({}).sort({ createdAt: -1 }).lean();
+    // If you use flash messages, pass them here; otherwise templates can check req.flash in layout.
+    res.render('admin-discounts', { title: 'Admin • Mã giảm giá', discounts, messages: req.flash ? req.flash() : {} });
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/discounts', async (req, res, next) => {
   try {
-    const { code, percent, startDate, endDate, active } = req.body;
-    await Discount.create({
+    // hỗ trợ cả form urlencoded, FormData và trường có tên tiếng Việt 'ma' (phòng trường hợp template khác)
+    const rawCode = (req.body && (req.body.code || req.body.ma || req.body.MA || req.body.Mã)) ? String(req.body.code || req.body.ma || req.body.MA || req.body.Mã).trim() : '';
+    const rawPercent = (req.body && (req.body.percent || req.body.phantram)) ? (req.body.percent || req.body.phantram) : null;
+    const startDate = req.body && (req.body.startDate || req.body.tungay) ? (req.body.startDate || req.body.tungay) : null;
+    const endDate = req.body && (req.body.endDate || req.body.denday) ? (req.body.endDate || req.body.denday) : null;
+    const rawActive = req.body && (req.body.active === 'on' || req.body.active === 'true' || req.body.active === '1' || req.body.active === true);
+
+    // debug logging to server console if something unexpected arrives
+    // console.log('/admin/discounts POST body:', req.body);
+
+    if (!rawCode) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+        return res.status(400).json({ message: 'Mã là bắt buộc' });
+      }
+      if (req.flash) req.flash('error', 'Mã là bắt buộc');
+      return res.redirect('/admin/discounts');
+    }
+
+    const code = rawCode.toUpperCase();
+    const percent = Number(rawPercent);
+    if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+        return res.status(400).json({ message: 'Phần trăm không hợp lệ (1-100)' });
+      }
+      if (req.flash) req.flash('error', 'Phần trăm không hợp lệ');
+      return res.redirect('/admin/discounts');
+    }
+
+    // tránh trùng
+    const existing = await Discount.findOne({ code });
+    if (existing) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+        return res.status(409).json({ message: 'Mã đã tồn tại' });
+      }
+      if (req.flash) req.flash('error', 'Mã đã tồn tại');
+      return res.redirect('/admin/discounts');
+    }
+
+    const d = new Discount({
       code,
-      percent: Number(percent),
+      percent,
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
-      active: active === 'on'
+      active: !!rawActive
     });
+    await d.save();
+
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+      return res.status(201).json({ discount: d });
+    }
+    if (req.flash) req.flash('success', 'Tạo mã thành công');
     res.redirect('/admin/discounts');
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('POST /admin/discounts error', e);
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+      return res.status(500).json({ message: 'Lỗi server khi tạo mã' });
+    }
+    next(e);
+  }
 });
 
+// Cập nhật mã giảm giá (PUT/POST)
 router.post('/discounts/:id', async (req, res, next) => {
   try {
-    const { code, percent, startDate, endDate, active } = req.body;
-    await Discount.findByIdAndUpdate(req.params.id, {
+    const id = req.params.id;
+    const rawCode = (req.body && (req.body.code || req.body.ma || req.body.Mã)) ? String(req.body.code || req.body.ma || req.body.Mã).trim() : '';
+    const rawPercent = (req.body && (req.body.percent || req.body.phantram)) ? (req.body.percent || req.body.phantram) : null;
+    const startDate = req.body && (req.body.startDate || req.body.tungay) ? (req.body.startDate || req.body.tungay) : null;
+    const endDate = req.body && (req.body.endDate || req.body.denday) ? (req.body.endDate || req.body.denday) : null;
+    const rawActive = req.body && (req.body.active === 'on' || req.body.active === 'true' || req.body.active === '1');
+
+    if (!rawCode) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+        return res.status(400).json({ message: 'Mã là bắt buộc' });
+      }
+      if (req.flash) req.flash('error', 'Mã là bắt buộc');
+      return res.redirect('/admin/discounts');
+    }
+    const code = rawCode.toUpperCase();
+    const percent = Number(rawPercent);
+    if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+        return res.status(400).json({ message: 'Phần trăm không hợp lệ (1-100)' });
+      }
+      if (req.flash) req.flash('error', 'Phần trăm không hợp lệ');
+      return res.redirect('/admin/discounts');
+    }
+
+    // tránh duplicate (nếu đổi code)
+    const conflict = await Discount.findOne({ code, _id: { $ne: id } });
+    if (conflict) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+        return res.status(409).json({ message: 'Mã đã tồn tại' });
+      }
+      if (req.flash) req.flash('error', 'Mã đã tồn tại');
+      return res.redirect('/admin/discounts');
+    }
+
+    const update = {
       code,
-      percent: Number(percent),
+      percent,
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
-      active: active === 'on'
-    });
+      active: !!rawActive
+    };
+
+    const updated = await Discount.findByIdAndUpdate(id, update, { new: true });
+    if (!updated) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+        return res.status(404).json({ message: 'Không tìm thấy mã' });
+      }
+      if (req.flash) req.flash('error', 'Không tìm thấy mã');
+      return res.redirect('/admin/discounts');
+    }
+
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+      return res.json({ discount: updated });
+    }
+    if (req.flash) req.flash('success', 'Cập nhật mã thành công');
     res.redirect('/admin/discounts');
-  } catch (e) { next(e); }
+  } catch (e) {
+    console.error('POST /admin/discounts/:id error', e);
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('application/json') !== -1)) {
+      return res.status(500).json({ message: 'Lỗi server khi cập nhật mã' });
+    }
+    next(e);
+  }
 });
 
+// DELETE (REST) - xóa mã
+router.delete('/discounts/:id', async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const del = await Discount.findByIdAndDelete(id);
+    if (!del) return res.status(404).json({ message: 'Không tìm thấy mã' });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('DELETE /admin/discounts/:id error', e);
+    return res.status(500).json({ message: 'Lỗi server khi xóa mã' });
+  }
+});
+
+// For compatibility: support form POST delete (old style)
 router.post('/discounts/:id/delete', async (req, res, next) => {
   try {
     await Discount.findByIdAndDelete(req.params.id);

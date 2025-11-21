@@ -1,7 +1,7 @@
 <%- include('partials/header') %>
 
-<div class="container my-4">
-  <ul class="nav nav-pills mb-3">
+<section class="container py-5">
+  <ul class="nav nav-tabs mb-4">
     <li class="nav-item"><a class="nav-link" href="/admin/dashboard">Tổng quan</a></li>
     <li class="nav-item"><a class="nav-link" href="/admin/rooms">Phòng</a></li>
     <li class="nav-item"><a class="nav-link" href="/admin/bookings">Đơn đặt</a></li>
@@ -10,113 +10,202 @@
   </ul>
 
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Mã giảm giá</h4>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDiscount">+ Thêm mã</button>
+    <h3 class="mb-0">Mã giảm giá</h3>
+    <button id="btnAddDiscount" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#discountModal">+ Thêm mã</button>
   </div>
 
-  <div class="card p-3 border-0 shadow-sm rounded-4">
+  <div class="card p-3">
     <div class="table-responsive">
-      <table class="table align-middle">
+      <table class="table table-hover align-middle">
         <thead>
-        <tr>
-          <th>#</th><th>Mã</th><th>%</th><th>Hiệu lực</th><th>Trạng thái</th><th></th>
-        </tr>
-        </thead>
-        <tbody>
-        <% discounts.forEach((d,i)=>{ %>
           <tr>
-            <td><%= i+1 %></td>
-            <td class="fw-semibold"><%= d.code %></td>
-            <td><%= d.percent %>%</td>
-            <td class="small">
-              <%= d.startDate? new Date(d.startDate).toLocaleDateString('vi-VN'): '-' %> →
-              <%= d.endDate? new Date(d.endDate).toLocaleDateString('vi-VN')  : '-' %>
-            </td>
-            <td><span class="badge bg-<%= d.active?'success':'secondary' %>"><%= d.active?'active':'inactive' %></span></td>
-            <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit-<%= d._id %>">Sửa</button>
-              <form class="d-inline" action="/admin/discounts/<%= d._id %>/delete" method="post" onsubmit="return confirm('Xoá mã này?')">
-                <button class="btn btn-sm btn-outline-danger">Xoá</button>
-              </form>
-            </td>
+            <th>#</th>
+            <th>Mã</th>
+            <th>%</th>
+            <th>Từ ngày</th>
+            <th>Đến ngày</th>
+            <th>Kích hoạt</th>
+            <th>Hành động</th>
           </tr>
-
-          <!-- Edit modal -->
-          <div class="modal fade" id="edit-<%= d._id %>" tabindex="-1">
-            <div class="modal-dialog">
-              <form class="modal-content" action="/admin/discounts/<%= d._id %>" method="post">
-                <div class="modal-header"><h5 class="modal-title">Sửa mã</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body row g-2">
-                  <div class="col-6">
-                    <label class="form-label">Mã</label>
-                    <input name="code" class="form-control" value="<%= d.code %>" required>
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label">Phần trăm</label>
-                    <input name="percent" type="number" min="1" max="100" class="form-control" value="<%= d.percent %>" required>
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label">Từ ngày</label>
-                    <input name="startDate" type="date" class="form-control"
-                           value="<%= d.startDate ? new Date(d.startDate).toISOString().slice(0,10): '' %>">
-                  </div>
-                  <div class="col-6">
-                    <label class="form-label">Đến ngày</label>
-                    <input name="endDate" type="date" class="form-control"
-                           value="<%= d.endDate ? new Date(d.endDate).toISOString().slice(0,10): '' %>">
-                  </div>
-                  <div class="col-12 form-check">
-                    <input id="active-<%= d._id %>" type="checkbox" class="form-check-input" name="active" <%= d.active?'checked':'' %>>
-                    <label class="form-check-label" for="active-<%= d._id %>">Kích hoạt</label>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
-                  <button class="btn btn-primary">Lưu</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        <% }) %>
+        </thead>
+        <tbody id="discountTableBody">
+        <% if (discounts && discounts.length) { %>
+          <% discounts.forEach(function(d, idx){ %>
+            <tr data-id="<%= d._id %>">
+              <td><%= idx+1 %></td>
+              <td><%= d.code %></td>
+              <td><%= d.percent %></td>
+              <td><%= d.startDate ? (new Date(d.startDate)).toLocaleDateString() : '' %></td>
+              <td><%= d.endDate ? (new Date(d.endDate)).toLocaleDateString() : '' %></td>
+              <td><%= d.active ? 'Yes' : 'No' %></td>
+              <td>
+                <button class="btn btn-sm btn-outline-danger btnDelete" data-id="<%= d._id %>">Xóa</button>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="7" class="text-muted">Chưa có mã giảm giá.</td></tr>
+        <% } %>
         </tbody>
       </table>
     </div>
   </div>
-</div>
+</section>
 
-<!-- Add modal -->
-<div class="modal fade" id="addDiscount" tabindex="-1">
+<!-- Modal: đặt ở cuối file (trước footer) để ko bị layout container ảnh hưởng -->
+<div class="modal fade" id="discountModal" tabindex="-1" aria-labelledby="discountModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" action="/admin/discounts" method="post">
-      <div class="modal-header"><h5 class="modal-title">Thêm mã</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body row g-2">
-        <div class="col-6">
+    <form id="discountForm" class="modal-content" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="discountModalLabel">Thêm mã</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="discountAlert" style="display:none;" class="alert alert-danger"></div>
+
+        <div class="mb-3">
           <label class="form-label">Mã</label>
-          <input name="code" class="form-control" required>
+          <input id="inputCode" name="code" required class="form-control" placeholder="VD: SUMMER10">
         </div>
-        <div class="col-6">
+
+        <div class="mb-3">
           <label class="form-label">Phần trăm</label>
-          <input name="percent" type="number" min="1" max="100" class="form-control" required>
+          <input id="inputPercent" name="percent" type="number" min="1" max="100" required class="form-control" placeholder="VD: 10">
         </div>
-        <div class="col-6">
-          <label class="form-label">Từ ngày</label>
-          <input name="startDate" type="date" class="form-control">
+
+        <div class="row g-2">
+          <div class="col">
+            <label class="form-label">Từ ngày</label>
+            <input id="inputStart" name="startDate" type="date" class="form-control">
+          </div>
+          <div class="col">
+            <label class="form-label">Đến ngày</label>
+            <input id="inputEnd" name="endDate" type="date" class="form-control">
+          </div>
         </div>
-        <div class="col-6">
-          <label class="form-label">Đến ngày</label>
-          <input name="endDate" type="date" class="form-control">
-        </div>
-        <div class="col-12 form-check">
-          <input id="active-new" type="checkbox" class="form-check-input" name="active" checked>
-          <label class="form-check-label" for="active-new">Kích hoạt</label>
+
+        <div class="form-check form-switch mt-3">
+          <input class="form-check-input" type="checkbox" id="activeSwitch" name="active" checked>
+          <label class="form-check-label" for="activeSwitch">Kích hoạt</label>
         </div>
       </div>
+
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
-        <button class="btn btn-primary">Thêm</button>
+        <button id="btnCancel" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+        <button id="btnSubmit" type="submit" class="btn btn-primary">Thêm</button>
       </div>
     </form>
   </div>
 </div>
 
 <%- include('partials/footer') %>
+
+<script>
+(function(){
+  const discountForm = document.getElementById('discountForm');
+  const discountAlert = document.getElementById('discountAlert');
+  const btnSubmit = document.getElementById('btnSubmit');
+  const discountTable = document.getElementById('discountTableBody');
+
+  function showError(msg){
+    discountAlert.style.display = 'block';
+    discountAlert.textContent = msg;
+  }
+  function clearError(){
+    discountAlert.style.display = 'none';
+    discountAlert.textContent = '';
+  }
+
+  discountForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    clearError();
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Đang thêm...';
+
+    const code = document.getElementById('inputCode').value.trim();
+    const percent = document.getElementById('inputPercent').value;
+    const startDate = document.getElementById('inputStart').value || null;
+    const endDate = document.getElementById('inputEnd').value || null;
+    const active = document.getElementById('activeSwitch').checked;
+
+    // validation client-side nhanh
+    if (!code) {
+      showError('Mã là bắt buộc');
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = 'Thêm';
+      return;
+    }
+    if (!percent || Number(percent) <= 0 || Number(percent) > 100) {
+      showError('Phần trăm phải từ 1 tới 100');
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = 'Thêm';
+      return;
+    }
+
+    const payload = { code, percent, startDate, endDate, active };
+
+    try {
+      const resp = await fetch('/admin/discounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        // server trả message hoặc errors
+        const msg = (data && (data.message || data.error || (data.errors && data.errors.join(', ')))) || 'Lỗi khi tạo mã giảm giá';
+        showError(msg);
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Thêm';
+        return;
+      }
+
+      const discount = data.discount;
+      const tr = document.createElement('tr');
+      tr.dataset.id = discount._id;
+      tr.innerHTML = `
+        <td>${discountTable.children.length + 1}</td>
+        <td>${discount.code}</td>
+        <td>${discount.percent}</td>
+        <td>${discount.startDate ? new Date(discount.startDate).toLocaleDateString() : ''}</td>
+        <td>${discount.endDate ? new Date(discount.endDate).toLocaleDateString() : ''}</td>
+        <td>${discount.active ? 'Yes' : 'No'}</td>
+        <td><button class="btn btn-sm btn-outline-danger btnDelete" data-id="${discount._id}">Xóa</button></td>
+      `;
+      discountTable.appendChild(tr);
+
+      const modalEl = document.getElementById('discountModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      modal.hide();
+      discountForm.reset();
+    } catch (err) {
+      console.error('Create discount error', err);
+      showError('Lỗi server khi tạo mã');
+    } finally {
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = 'Thêm';
+    }
+  });
+
+  document.addEventListener('click', async function(e){
+    if(e.target.matches('.btnDelete')){
+      const id = e.target.dataset.id;
+      if(!confirm('Bạn có chắc muốn xóa mã này?')) return;
+      try {
+        const resp = await fetch('/admin/discounts/' + id, { method: 'DELETE', headers: {'Accept':'application/json'}});
+        const data = await resp.json();
+        if (!resp.ok) {
+          alert(data.message || 'Xóa thất bại');
+          return;
+        }
+        const row = document.querySelector('tr[data-id="'+id+'"]');
+        if(row) row.remove();
+      } catch(err){
+        console.error(err);
+        alert('Lỗi khi xóa');
+      }
+    }
+  });
+})();
+</script>

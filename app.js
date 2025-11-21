@@ -74,7 +74,15 @@ app.get('/', async (req, res, next) => {
   try {
     let rooms = [];
     try {
-      rooms = await Room.find().limit(2).lean();
+      // Nếu bạn muốn giới hạn số phòng hiện thị trên trang chính,
+      // đặt biến môi trường HOMEPAGE_LIMIT (ví dụ 6). Nếu không có, sẽ hiện tất cả.
+      const limitEnv = parseInt(process.env.HOMEPAGE_LIMIT || '', 10);
+      if (Number.isFinite(limitEnv) && limitEnv > 0) {
+        rooms = await Room.find().sort({ createdAt: -1 }).limit(limitEnv).lean();
+      } else {
+        // Hiển thị tất cả phòng
+        rooms = await Room.find().sort({ createdAt: -1 }).lean();
+      }
     } catch (e) {
       rooms = [];
     }
