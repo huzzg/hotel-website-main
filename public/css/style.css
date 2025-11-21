@@ -111,7 +111,7 @@ body {
   .btn-search { padding: 10px 8px; }
 }
 
-/* -------------------- ROOM CARDS (keeps existing look but slightly refined) -------------------- */
+/* -------------------- ROOM CARDS -------------------- */
 
 .room-card {
   border-radius: 12px;
@@ -119,9 +119,53 @@ body {
   background: #fff;
   border: 1px solid rgba(10,20,30,0.04);
   box-shadow: 0 6px 18px rgba(4,20,35,0.04);
+
+  /* HOVER EFFECT ADDED */
+  transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 260ms cubic-bezier(.2,.9,.2,1);
+  transform-origin: center center;
 }
 .room-card .card-body { padding: 18px; }
 .room-card .card-title { margin-bottom: 6px; font-weight: 700; color: #10323a; }
+
+/* ---------- HOVER ZOOM + LIFT EFFECT ---------- */
+/* scale - translateY - shadow */
+.room-card:hover,
+.room-card:focus-within {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(6,30,50,0.12);
+}
+
+/* zoom ảnh */
+.room-card img {
+  transition: transform 420ms cubic-bezier(.2,.9,.2,1);
+}
+.room-card:hover img,
+.room-card:focus-within img {
+  transform: scale(1.06);
+  object-fit: cover;
+}
+
+/* body trượt nhẹ */
+.room-card .card-body {
+  transition: transform 260ms cubic-bezier(.2,.9,.2,1);
+}
+.room-card:hover .card-body,
+.room-card:focus-within .card-body {
+  transform: translateY(-3px);
+}
+
+/* disable effect in mobile */
+@media (max-width: 767px) {
+  .room-card,
+  .room-card:hover {
+    transform: none;
+    box-shadow: 0 6px 18px rgba(4,20,35,0.04);
+  }
+  .room-card img,
+  .room-card:hover img {
+    transform: none;
+  }
+}
 
 /* -------------------- FOOTER -------------------- */
 

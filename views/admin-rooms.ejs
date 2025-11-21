@@ -30,7 +30,18 @@
       </thead>
       <tbody>
         <% if (rooms && rooms.length) { %>
-          <% rooms.forEach(function(room, idx){ %>
+          <% rooms.forEach(function(room, idx){ 
+               // compute thumbnail path similar to index logic
+               let thumb = '/images/default-avatar.jpg';
+               if (room.image) {
+                 const img = String(room.image).trim();
+                 const isUrl = img.startsWith('http://') || img.startsWith('https://');
+                 if (isUrl) thumb = img;
+                 else if (img.startsWith('/')) thumb = img;
+                 else if (img.indexOf('/') !== -1) thumb = img.startsWith('uploads/') ? '/' + img : '/' + img;
+                 else thumb = '/uploads/rooms/' + img;
+               }
+          %>
             <tr>
               <td><%= idx+1 %></td>
               <td><%= room.roomNumber %></td>
@@ -42,11 +53,7 @@
                 </span>
               </td>
               <td>
-                <% if (room.image) { %>
-                  <img src="<%= room.image %>" style="width:64px;height:48px;object-fit:cover;border-radius:6px;">
-                <% } else { %>
-                  <img src="/images/default-avatar.jpg" style="width:64px;height:48px;object-fit:cover;border-radius:6px;">
-                <% } %>
+                <img src="<%= thumb %>" style="width:64px;height:48px;object-fit:cover;border-radius:6px;" onerror="this.src='/images/default-avatar.jpg'">
               </td>
               <td>
                 <!-- Sửa: data-* để main.js lấy (giữ image, type, price, status, description) -->

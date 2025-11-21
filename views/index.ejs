@@ -126,18 +126,36 @@
   </div>
 </section>
 
-<!-- Featured rooms (giữ nguyên các include hiện có trong project) -->
+<!-- Featured rooms (sửa logic ảnh: hỗ trợ filename / uploads path / full url) -->
 <section class="container py-5">
   <h3 class="text-primary fw-bold mb-3">Phòng nổi bật</h3>
 
   <div class="row g-4">
     <% if (rooms && rooms.length) { %>
-      <% rooms.forEach(r => { %>
+      <% rooms.forEach(function(r){ 
+           // compute imagePath safely:
+           let imgPath = '/images/room1.jpeg'; // default
+           if (r.image) {
+             const img = String(r.image || '').trim();
+             const isUrl = img.startsWith('http://') || img.startsWith('https://');
+             if (isUrl) {
+               imgPath = img;
+             } else if (img.startsWith('/')) {
+               imgPath = img; // already absolute path
+             } else if (img.indexOf('/') !== -1) {
+               // contains slash but not starting with slash -> ensure leading slash
+               imgPath = img.startsWith('uploads/') ? '/' + img : '/' + img;
+             } else {
+               // filename only -> assume stored in public/uploads/rooms/
+               imgPath = '/uploads/rooms/' + img;
+             }
+           }
+      %>
         <div class="col-sm-6 col-lg-4">
           <a href="/user/room/<%= r._id %>" class="text-decoration-none text-dark">
-            <div class="card h-100 border-0 shadow-sm rounded-4">
-              <img src="<%= (r.image && (r.image.startsWith('/images/') || r.image.startsWith('http'))) ? r.image : (r.image ? '/images/' + r.image : '/images/room1.jpeg') %>"
-                   class="card-img-top rounded-top-4" style="height:220px;object-fit:cover" alt="room" onerror="this.src='/images/room1.jpeg'">
+            <!-- **ĐÃ SỬA**: thêm 'room-card' để hover css tác động -->
+            <div class="card room-card h-100 border-0 shadow-sm rounded-4">
+              <img src="<%= imgPath %>" class="card-img-top rounded-top-4" style="height:220px;object-fit:cover" alt="room" onerror="this.src='/images/room1.jpeg'">
               <div class="card-body">
                 <h6 class="fw-bold mb-1"><%= r.name || (r.type + ' - ' + r.roomNumber) %></h6>
                 <div class="d-flex justify-content-between align-items-center">
