@@ -1,22 +1,22 @@
 // routes/payment.js
 const express = require('express');
 const router = express.Router();
+const Booking = require('../models/Booking');
+const Payment = require('../models/Payment'); // model bạn đã upload
+const { requireAuth } = require('../middleware/authMiddleware');
 
+// giữ phần Stripe / checkout cũ (nếu bạn cần)
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
   try {
-    // Stripe v12+ dùng ESM import; với CJS có thể require như dưới:
     const Stripe = require('stripe');
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   } catch (e) {
-    console.warn('[payment] Không khởi tạo được Stripe, sẽ dùng chế độ mock.', e?.message || e);
+    console.warn('[payment] Stripe init failed, falling back to mock.', e?.message || e);
     stripe = null;
   }
 }
 
-/**
- * Helper: tính số đêm từ checkIn/checkOut (YYYY-MM-DD)
- */
 function calcNights(checkIn, checkOut) {
   if (!checkIn || !checkOut) return 1;
   const inDate = new Date(checkIn);
@@ -27,12 +27,7 @@ function calcNights(checkIn, checkOut) {
 }
 
 /**
- * POST /payment/checkout
- * Body có thể gửi:
- * - amount: số tiền *VND* (hoặc *USD cents* nếu dùng Stripe thật)
- * - HOẶC: pricePerNight + checkIn + checkOut  -> hệ thống tự tính amount
- * - currency: mặc định 'usd' khi dùng Stripe, 'vnd' khi mock
- * - metadata (tuỳ chọn)
+ * POST /payment/checkout  (kept from original)
  */
 router.post('/checkout', async (req, res, next) => {
   try {
@@ -45,7 +40,6 @@ router.post('/checkout', async (req, res, next) => {
       metadata = {}
     } = req.body || {};
 
-    // Tính amount nếu chưa truyền
     let total = Number(amount);
     if (!Number.isFinite(total) || total <= 0) {
       const nights = calcNights(checkIn, checkOut);
@@ -53,7 +47,6 @@ router.post('/checkout', async (req, res, next) => {
       total = Math.max(price * nights, 0);
     }
 
-    // Nếu không khởi tạo được Stripe -> mock thanh toán (cho luồng test)
     if (!stripe) {
       return res.json({
         ok: true,
@@ -64,10 +57,7 @@ router.post('/checkout', async (req, res, next) => {
       });
     }
 
-    // Stripe: dùng USD cho chắc chắn (VND không phải lúc nào cũng được hỗ trợ)
     const currency = (rawCurrency || 'usd').toLowerCase();
-
-    // Stripe tính theo "cents" -> nhân 100 nếu đang gửi số tiền đơn vị "USD"
     const amountInSmallestUnit = currency === 'usd' ? Math.round(total * 100) : Math.round(total);
 
     const intent = await stripe.paymentIntents.create({
@@ -86,6 +76,92 @@ router.post('/checkout', async (req, res, next) => {
   } catch (err) {
     console.error('[payment] checkout error:', err);
     next(err);
+  }
+});
+
+/**
+ * GET /payment/user?bookingId=...
+ * Hiển thị trang thanh toán có 2 QR (Momo / VNPAY)
+ */
+router.get('/user', requireAuth, async (req, res) => {
+  try {
+    const bookingId = req.query.bookingId;
+    if (!bookingId) return res.status(400).send('Missing bookingId');
+
+    const booking = await Booking.findById(bookingId).populate('roomId').lean();
+    if (!booking) return res.status(404).send('Booking not found');
+
+    // Nếu đã thanh toán -> redirect về trang xác nhận
+    if (booking.status === 'paid') {
+      return res.redirect(`/user/booking-confirm?bookingId=${bookingId}`);
+    }
+
+    // Đường dẫn ảnh QR mẫu (bạn đã upload vào public/images/qrcodes/)
+    const momoQRCode = '/images/qrcodes/momo-sample.jpg';
+    const vnpayQRCode = '/images/qrcodes/vnpay-sample.jpg';
+
+    res.render('payment', {
+      title: 'Thanh toán',
+      booking,
+      momoQRCode,
+      vnpayQRCode
+    });
+  } catch (err) {
+    console.error('GET /payment/user error', err);
+    res.status(500).send('Server error');
+  }
+});
+
+/**
+ * POST /payment/user/confirm
+ * Body (form-url-encoded): bookingId, method, transactionId (tuỳ chọn)
+ * Hành động: tạo payment record nếu model Payment có, cập nhật booking.status -> 'paid', redirect về booking-confirm
+ */
+router.post('/user/confirm', requireAuth, async (req, res) => {
+  try {
+    const bookingId = req.body.bookingId || req.query.bookingId;
+    const method = req.body.method || req.body.paymentMethod || 'momo';
+    const transactionId = req.body.transactionId || req.body.txn || null;
+
+    if (!bookingId) {
+      return res.status(400).send('Missing bookingId');
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) return res.status(404).send('Booking not found');
+
+    // Nếu đã thanh toán rồi -> redirect
+    if (booking.status === 'paid') {
+      return res.redirect(`/user/booking-confirm?bookingId=${bookingId}`);
+    }
+
+    // Tạo bản ghi Payment (nếu model tồn tại)
+    try {
+      if (Payment) {
+        const pay = await Payment.create({
+          bookingId: booking._id,
+          amount: booking.totalPrice || 0,
+          method,
+          status: 'paid',
+          transactionId: transactionId || `SIM-${Date.now()}`,
+          paidAt: new Date()
+        });
+        // optionally: attach payment id to booking (schema không khai báo, nhưng lưu thêm field là OK)
+        booking.paymentId = pay._id;
+      }
+    } catch (e) {
+      // nếu không thể lưu payment, log nhưng vẫn tiếp tục đổi trạng thái booking để UX không bị block
+      console.warn('Could not create Payment doc:', e);
+    }
+
+    booking.status = 'paid';
+    await booking.save();
+
+    // redirect về trang xác nhận booking (lịch sử sẽ hiển thị trạng thái paid)
+    return res.redirect(`/user/booking-confirm?bookingId=${bookingId}`);
+  } catch (err) {
+    console.error('POST /payment/user/confirm error', err);
+    return res.status(500).send('Server error');
   }
 });
 

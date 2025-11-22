@@ -1,33 +1,66 @@
 <%- include('partials/header') %>
-<style>
-  .payment-container { max-width: 700px; margin: 50px auto; }
-  .payment-form { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-</style>
 
-<div class="payment-container">
-  <h2 class="text-center mb-4">Thanh Toán</h2>
-  <div class="payment-form">
-    <h5>Booking: <%= booking._id %></h5>
-    <p>Phòng: <strong><%= booking.roomId.type %> - <%= booking.roomId.roomNumber %></strong></p>
-    <p>Tổng cần thanh toán: <strong class="text-primary"><%= (booking.totalPrice || 0).toLocaleString('vi-VN') %> đ</strong></p>
+<div class="container" style="margin-top:40px;">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">Thanh toán đơn đặt phòng</h4>
+        </div>
+        <div class="card-body">
+          <h5>Thông tin đơn</h5>
+          <p>Phòng: <strong><%= booking.roomId?.name || booking.roomId?.type || booking.roomId?.roomNumber %></strong></p>
+          <p>Check-in: <%= new Date(booking.checkIn).toLocaleDateString('vi-VN') %> &nbsp; | &nbsp; Check-out: <%= new Date(booking.checkOut).toLocaleDateString('vi-VN') %></p>
+          <p>Số tiền: <strong><%= (booking.totalPrice || 0).toLocaleString('vi-VN') %> đ</strong></p>
+          <hr>
 
-    <!-- nếu bạn chưa kết nối Stripe, form này sẽ gọi route giả lập /user/pay/:bookingId -->
-    <form action="/user/pay/<%= booking._id %>" method="POST">
-      <div class="mb-3">
-        <label class="form-label">Chọn phương thức</label>
-        <select class="form-select" name="method">
-          <option value="manual">Thanh toán thử (offline)</option>
-          <option value="card">Thẻ (Stripe)</option>
-        </select>
+          <h5>Chọn phương thức thanh toán</h5>
+          <div class="row">
+            <div class="col-md-6 text-center">
+              <p><strong>MOMO</strong></p>
+              <img src="<%= momoQRCode %>" alt="Momo QR" class="img-fluid" style="max-width:260px;"/>
+              <p class="text-muted mt-2">Quét mã bằng app Momo</p>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="method" id="methodMomo" value="momo" checked>
+                <label class="form-check-label" for="methodMomo">MOMO</label>
+              </div>
+            </div>
+
+            <div class="col-md-6 text-center">
+              <p><strong>VNPAY</strong></p>
+              <img src="<%= vnpayQRCode %>" alt="VNPAY QR" class="img-fluid" style="max-width:260px;"/>
+              <p class="text-muted mt-2">Quét mã bằng app ngân hàng hỗ trợ VNPAY</p>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="method" id="methodVnpay" value="vnpay">
+                <label class="form-check-label" for="methodVnpay">VNPAY</label>
+              </div>
+            </div>
+          </div>
+
+          <hr>
+          <div class="text-center">
+            <form id="confirmPayForm" action="/payment/user/confirm" method="POST" style="display:inline-block">
+              <input type="hidden" name="bookingId" value="<%= booking._id %>" />
+              <input type="hidden" name="method" id="selectedPaymentMethod" value="momo" />
+              <button id="btnPaid" class="btn btn-success btn-lg" type="submit">Tôi đã thanh toán (Xác nhận)</button>
+            </form>
+            <a href="/user/booking-confirm?bookingId=<%= booking._id %>" class="btn btn-secondary">Quay lại</a>
+          </div>
+
+          <div id="payMessage" class="mt-3 text-center"></div>
+        </div>
       </div>
-
-      <div class="mb-3">
-        <button class="btn btn-primary w-100" type="submit">Xác nhận thanh toán</button>
-      </div>
-    </form>
-
-    <div class="text-muted small">Lưu ý: đây là trang thanh toán mẫu — bạn có thể tích hợp Stripe/Paypal sau.</div>
+    </div>
   </div>
 </div>
+
+<script>
+  // cập nhật input hidden khi đổi radio
+  document.addEventListener('DOMContentLoaded', function () {
+    const radios = document.querySelectorAll('input[name="method"]');
+    const field = document.getElementById('selectedPaymentMethod');
+    radios.forEach(r => r.addEventListener('change', () => { if(field) field.value = r.value; }));
+  });
+</script>
 
 <%- include('partials/footer') %>

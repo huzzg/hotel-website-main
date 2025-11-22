@@ -32,7 +32,15 @@
             <td><%= new Date(b.checkIn).toLocaleDateString('vi-VN') %></td>
             <td><%= new Date(b.checkOut).toLocaleDateString('vi-VN') %></td>
             <td><%= Number(b.totalPrice||0).toLocaleString('vi-VN') %>đ</td>
-            <td><span class="badge bg-secondary"><%= b.status %></span></td>
+            <td>
+              <% 
+                let badgeClass = 'bg-secondary';
+                if (b.status === 'paid') badgeClass = 'bg-success';
+                else if (b.status === 'confirmed' || b.status === 'checked_in') badgeClass = 'bg-primary';
+                else if (b.status === 'cancelled') badgeClass = 'bg-danger';
+              %>
+              <span class="badge <%= badgeClass %>"><%= b.status %></span>
+            </td>
             <td class="text-end">
               <form action="/admin/bookings/<%= b._id %>/status" method="post" class="d-flex gap-2">
                 <select name="status" class="form-select form-select-sm" style="width:160px">

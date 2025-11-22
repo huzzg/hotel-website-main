@@ -131,43 +131,32 @@ router.post(['/profile', '/user/profile'], requireAuth, async (req, res, next) =
   } catch (err) { next(err); }
 });
 
-/* ============== LỊCH SỬ ĐẶT PHÒNG (unchanged mapping) ============== */
-router.get(['/history', '/user/history'], requireAuth, async (req, res, next) => {
+// --- Route: lịch sử đặt phòng ---
+/**
+ * GET /user/history
+ * Hiển thị danh sách booking của user đang đăng nhập
+ */
+router.get('/history', requireAuth, async (req, res) => {
   try {
-    if (!Booking) {
-      return res.render('history', {
-        title: 'Lịch sử đặt phòng',
-        bookings: [],
-        note: 'Chưa tích hợp model Booking nên chưa có dữ liệu hiển thị.'
-      });
-    }
+    // req.user._id hoặc req.user.id tùy middleware attach user
+    const userId = req.user && (req.user._id || req.user.id);
+    if (!userId) return res.redirect('/auth/login');
 
-    const bookings = await Booking
-      .find({ userId: req.user.id })
-      .populate('roomId')
+    // Tìm tất cả booking của user (sắp xếp mới nhất trước), populate thông tin phòng
+    const bookings = await Booking.find({ userId: userId })
+      .populate({ path: 'roomId', select: 'roomNumber type price name images' })
       .sort({ createdAt: -1 })
       .lean();
 
-    const mapped = bookings.map(b => ({
-      _id: b._id,
-      code: b.code || b.bookingCode || ('BK' + String(b._id).slice(-6).toUpperCase()),
-      roomName: b.roomId?.name || (b.roomId?.type ? `${b.roomId.type} - ${b.roomId?.roomNumber || ''}` : 'Phòng'),
-      location: b.roomId?.description || '',
-      price: b.roomId?.price || 0,
-      totalPrice: b.totalPrice || b.amount || 0,
-      status: b.status || 'pending',
-      createdAt: b.createdAt,
-      checkIn:  b.checkIn,
-      checkOut: b.checkOut,
-    }));
-
-    res.render('history', {
-      title: 'Lịch sử đặt phòng',
-      bookings: mapped,
-      note: null
-    });
-  } catch (err) { next(err); }
+    // render view history.ejs (tạo file dưới views/history.ejs)
+    return res.render('history', { title: 'Lịch sử đặt phòng', bookings, user: req.user });
+  } catch (err) {
+    console.error('GET /user/history error:', err);
+    return res.status(500).send('Lỗi server, thử lại sau.');
+  }
 });
+
+module.exports = router;
 
 /* ================== NEW: Room detail + booking + payment flow ================== */
 

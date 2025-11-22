@@ -20,8 +20,9 @@ body {
 
 /* ensure header/footer + main layout */
 .site-main { flex: 1 0 auto; }
-/* add top padding so fixed header doesn't overlap content */
-.site-main { padding-top: 72px; }
+/* add top padding so fixed header doesn't overlap content
+   -> giảm nhẹ so với cũ để tránh stripe trắng */
+.site-main { padding-top: 64px; padding-bottom: 0; }
 .site-main .container { max-width: 1180px; margin: 0 auto; padding: 22px 18px; box-sizing: border-box; }
 
 /* -------------------- NAVBAR -------------------- */
@@ -41,7 +42,8 @@ body {
 .navbar .nav-link { color: #ffffff !important; font-weight: 600; }
 
 /* small safe area under fixed header to avoid thin white line */
-.header-spacer { height: 6px; }
+/* nếu template có header-spacer, ẩn nó để tránh stripe trắng */
+.header-spacer { display: none; height: 0; }
 
 /* -------------------- SEARCH CARD STYLES (NEW, đẹp hơn) -------------------- */
 
@@ -209,6 +211,7 @@ body {
   padding: 18px 0;
   text-align: center;
   margin-top: 0;
+  position: relative;
 }
 
 /* small helpers */
@@ -277,4 +280,26 @@ body {
 @media (max-width: 640px) {
   .discounts-title { font-size: 22px; }
   .discount-card { padding: 14px; }
+}
+
+/* extra: nếu muốn áp dụng riêng cho trang auth (đăng nhập/register) */
+/* ví dụ template có body class "auth-page" thì bẻ padding để không có khoảng trắng lớn */
+.auth-page .site-main { padding-top: 18px; padding-bottom: 18px; }
+
+/* style cho history cards */
+.history-card {
+  gap: 16px;
+}
+
+.history-thumb {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  background: #f0f0f0;
+  display: block;
+}
+
+/* responsive nhỏ */
+@media (max-width: 576px) {
+  .history-thumb { width: 80px; height: 64px; }
 }
