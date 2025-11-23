@@ -5,6 +5,7 @@ const router = express.Router();
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
 const Discount = require('../models/Discount');
+const isRoomAvailable = require('../utils/checkRoomAvailability');
 
 // helper to parse price param strings -> number (handle "250.000" / "250,5" / "250000")
 function parsePriceParam(val) {
@@ -64,8 +65,7 @@ router.get('/', async (req, res, next) => {
         if (max !== null) filter.price.$lte = max;
       }
 
-      // Note: availability check (using Booking) can be added later
-
+      // build query
       let qBuilder = Room.find(filter).lean();
 
       if (sort === 'priceAsc') qBuilder = qBuilder.sort({ price: 1 });
@@ -81,6 +81,24 @@ router.get('/', async (req, res, next) => {
         }
         return r;
       });
+
+      // If user provided checkIn/checkOut, annotate availability for that range
+      if (checkIn && checkOut && isRoomAvailable) {
+        // For each room call utility to test overlap. Note: this issues one query per room.
+        const annotated = await Promise.all(rooms.map(async (r) => {
+          try {
+            const ok = await isRoomAvailable(r._id, checkIn, checkOut);
+            return { ...r, isAvailableForRange: !!ok };
+          } catch (e) {
+            // on error, treat as available to avoid hiding rooms unexpectedly
+            return { ...r, isAvailableForRange: true };
+          }
+        }));
+        rooms = annotated;
+      } else {
+        // If user didn't select dates, annotate isAvailableForRange undefined (views can fallback to isAvailableToday or true)
+        rooms = rooms.map(r => ({ ...r, isAvailableForRange: undefined }));
+      }
     }
 
     // render with default variables so template never gets undefined

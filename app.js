@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(cookieParser());
 
-// DB connect (giữ file config/db của bạn)
+// DB connect (nếu bạn có file config/db.js)
 try {
   require('./config/db');
 } catch (e) {
@@ -76,10 +76,17 @@ app.use('/payment', paymentRoutes);
 const Room = require('./models/Room');
 const Discount = require('./models/Discount');
 
-// HOME route: lấy rooms (nếu bạn có logic khác, giữ nguyên) + lấy discounts
+// utils availability
+let isRoomAvailable = null;
+try {
+  isRoomAvailable = require('./utils/checkRoomAvailability');
+} catch (e) {
+  console.warn('Không tìm thấy utils/checkRoomAvailability — availability sẽ không được tính tự động.');
+}
+
+// HOME route: lấy rooms + lấy discounts
 app.get('/', async (req, res, next) => {
   try {
-    // lấy rooms: giữ nguyên logic của bạn nếu có, đây chỉ ví dụ
     let rooms = [];
     try {
       const limitEnv = parseInt(process.env.HOMEPAGE_LIMIT || '', 10);
@@ -93,23 +100,29 @@ app.get('/', async (req, res, next) => {
       rooms = [];
     }
 
-    // LẤY TẤT CẢ discounts đã tạo (nếu bạn chỉ muốn hiển thị mã "còn hiệu lực", đổi query)
-    // - để hiện "mọi mã đã tạo" (user yêu cầu): bỏ điều kiện active/date hoặc chỉ active: true
-    // - để hiển thị "chỉ mã đang có hiệu lực dùng ngay": uncomment phần filter "active && date range"
+    // compute today's availability using local midnight (NOT UTC)
+    if (isRoomAvailable) {
+      const todayLocal = new Date();
+      const start = new Date(todayLocal.getFullYear(), todayLocal.getMonth(), todayLocal.getDate(), 0, 0, 0, 0); // local midnight
+      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000); // next local midnight
+      const annotated = await Promise.all(rooms.map(async (r) => {
+        try {
+          const ok = await isRoomAvailable(r._id, start.toISOString(), end.toISOString());
+          return { ...r, isAvailableToday: !!ok };
+        } catch (e) {
+          // if utility throws (invalid dates), assume available to avoid false hiding
+          return { ...r, isAvailableToday: true };
+        }
+      }));
+      rooms = annotated;
+    } else {
+      rooms = rooms.map(r => ({ ...r, isAvailableToday: true }));
+    }
+
+    // lấy discounts
     let discounts = [];
     try {
-      // Option A: hiển thị tất cả mã (đã tạo) — uncomment if you want all:
       discounts = await Discount.find().sort({ createdAt: -1 }).lean();
-
-      // Option B: chỉ hiển thị mã active & trong ngày (nếu muốn thay behavior)
-      // const now = new Date();
-      // discounts = await Discount.find({
-      //   active: true,
-      //   $and: [
-      //     { $or: [{ startDate: { $lte: now } }, { startDate: null }] },
-      //     { $or: [{ endDate: { $gte: now } }, { endDate: null }] },
-      //   ],
-      // }).sort({ startDate: 1 }).lean();
     } catch (e) {
       console.error('Error fetching discounts for homepage:', e);
       discounts = [];
@@ -121,8 +134,6 @@ app.get('/', async (req, res, next) => {
     next(err);
   }
 });
-
-// mount adminRoutes already above; other routes loaded earlier
 
 // Error handler
 app.use((err, req, res, next) => {

@@ -205,7 +205,8 @@
   </div>
 </section>
 
-<!-- Featured rooms (sửa logic ảnh: hỗ trợ filename / uploads path / full url) -->
+
+<!-- Featured rooms (enhanced: supports filename / uploads path / full url, shows availability badges) -->
 <section class="container py-5">
   <h3 class="text-primary fw-bold mb-3">Phòng nổi bật</h3>
 
@@ -229,11 +230,27 @@
                imgPath = '/uploads/rooms/' + img;
              }
            }
+
+           // determine availability flags (order of precedence)
+           // 1) if search page provided isAvailableForRange (true/false) -> use it
+           // 2) else if homepage annotated isAvailableToday -> use it
+           // 3) else undefined (assume available)
+           let isAvailable = true;
+           if (typeof r.isAvailableForRange !== 'undefined' && r.isAvailableForRange !== null) {
+             isAvailable = !!r.isAvailableForRange;
+           } else if (typeof r.isAvailableToday !== 'undefined' && r.isAvailableToday !== null) {
+             isAvailable = !!r.isAvailableToday;
+           } else {
+             isAvailable = true;
+           }
       %>
         <div class="col-sm-6 col-lg-4">
-          <a href="/user/room/<%= r._id %>" class="text-decoration-none text-dark">
-            <!-- **ĐÃ SỬA**: thêm 'room-card' để hover css tác động -->
-            <div class="card room-card h-100 border-0 shadow-sm rounded-4">
+          <% if (isAvailable) { %>
+            <a href="/user/room/<%= r._id %>" class="text-decoration-none text-dark">
+          <% } else { %>
+            <div class="text-decoration-none text-dark">
+          <% } %>
+            <div class="card room-card h-100 border-0 shadow-sm rounded-4 position-relative <%= isAvailable ? '' : 'room-card-disabled' %>">
               <img src="<%= imgPath %>" class="card-img-top rounded-top-4" style="height:220px;object-fit:cover" alt="room" onerror="this.src='/images/room1.jpeg'">
               <div class="card-body">
                 <h6 class="fw-bold mb-1"><%= r.name || (r.type + ' - ' + r.roomNumber) %></h6>
@@ -242,8 +259,39 @@
                   <div class="small text-muted"><%= r.type || '' %></div>
                 </div>
               </div>
+
+              <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <div>
+                  <% if (typeof r.isAvailableForRange !== 'undefined' && r.isAvailableForRange !== null) { %>
+                    <% if (r.isAvailableForRange) { %>
+                      <span class="badge bg-success">Trống cho ngày đã chọn</span>
+                    <% } else { %>
+                      <span class="badge bg-danger">Bận trong khoảng đã chọn</span>
+                    <% } %>
+                  <% } else if (typeof r.isAvailableToday !== 'undefined' && r.isAvailableToday !== null) { %>
+                    <% if (r.isAvailableToday) { %>
+                      <span class="badge bg-success">Trống hôm nay</span>
+                    <% } else { %>
+                      <span class="badge bg-warning text-dark">Có khách hôm nay</span>
+                    <% } %>
+                  <% } %>
+                </div>
+
+                <div>
+                  <% if (isAvailable) { %>
+                    <a class="btn btn-primary btn-sm" href="/user/room/<%= r._id %>">Xem & Đặt</a>
+                  <% } else { %>
+                    <button class="btn btn-secondary btn-sm" disabled>Không khả dụng</button>
+                  <% } %>
+                </div>
+              </div>
+
             </div>
-          </a>
+          <% if (isAvailable) { %>
+            </a>
+          <% } else { %>
+            </div>
+          <% } %>
         </div>
       <% }) %>
     <% } else { %>
@@ -251,6 +299,7 @@
     <% } %>
   </div>
 </section>
+
 
 <%- include('partials/footer') %>
 
