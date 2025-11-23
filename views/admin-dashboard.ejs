@@ -1,7 +1,6 @@
 <%- include('partials/header') %>
 
-<div class="container my-4">
-  <!-- Nav Admin -->
+<div class="container my-4 pt-4">
   <ul class="nav nav-pills mb-3">
     <li class="nav-item"><a class="nav-link active" href="/admin/dashboard">Tổng quan</a></li>
     <li class="nav-item"><a class="nav-link" href="/admin/rooms">Phòng</a></li>
@@ -10,51 +9,110 @@
     <li class="nav-item"><a class="nav-link" href="/admin/discounts">Mã giảm giá</a></li>
   </ul>
 
-  <div class="row g-3">
+  <div class="row g-3 mb-3">
     <div class="col-md-3">
-      <div class="card p-4 border-0 shadow-sm rounded-4">
+      <div class="card p-3 shadow-sm">
         <div class="small text-muted">Người dùng</div>
-        <div class="fs-2 fw-bold"><%= stat.users %></div>
+        <div class="h4 fw-bold"><%= usersCount %></div>
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card p-4 border-0 shadow-sm rounded-4">
+      <div class="card p-3 shadow-sm">
         <div class="small text-muted">Phòng</div>
-        <div class="fs-2 fw-bold"><%= stat.rooms %></div>
+        <div class="h4 fw-bold"><%= roomsCount %></div>
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card p-4 border-0 shadow-sm rounded-4">
+      <div class="card p-3 shadow-sm">
         <div class="small text-muted">Đơn đặt</div>
-        <div class="fs-2 fw-bold"><%= stat.bookings %></div>
+        <div class="h4 fw-bold"><%= bookingsCount %></div>
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card p-4 border-0 shadow-sm rounded-4">
+      <div class="card p-3 shadow-sm">
         <div class="small text-muted">Doanh thu (đ)</div>
-        <div class="fs-2 fw-bold"><%= stat.revenue.toLocaleString('vi-VN') %></div>
+        <div class="h4 fw-bold"><%= Number(totalRevenue || 0).toLocaleString('vi-VN') %></div>
       </div>
     </div>
   </div>
 
-  <div class="card mt-4 border-0 shadow-sm rounded-4">
-    <div class="card-body">
-      <h5 class="card-title">Doanh thu theo tháng</h5>
-      <div class="table-responsive">
-        <table class="table align-middle">
-          <thead><tr><th>Tháng</th><th>Doanh thu (đ)</th></tr></thead>
-          <tbody>
-          <% monthly.forEach(m => { %>
+  <div class="card p-3 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Doanh thu theo <%= selectedRange === 'day' ? 'Ngày' : (selectedRange === 'month' ? 'Tháng' : 'Năm') %></h5>
+
+      <form id="statsForm" class="d-flex gap-2 align-items-center" method="GET" action="/admin/dashboard">
+        <select name="range" id="rangeSelect" class="form-select form-select-sm">
+          <option value="day" <%= selectedRange === 'day' ? 'selected' : '' %> >Ngày</option>
+          <option value="month" <%= selectedRange === 'month' ? 'selected' : '' %> >Tháng</option>
+          <option value="year" <%= selectedRange === 'year' ? 'selected' : '' %> >Năm</option>
+        </select>
+
+        <input id="dateInput" name="date" class="form-control form-control-sm" style="width:170px;"
+               value="<%= selectedDate %>" placeholder="Chọn" />
+
+        <button class="btn btn-primary btn-sm" type="submit">Xem</button>
+      </form>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th><%= selectedRange === 'day' ? 'Ngày' : (selectedRange === 'month' ? 'Tháng' : 'Năm') %></th>
+            <th>Đơn hàng</th>
+            <th>Doanh thu (đ)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!statsRows || statsRows.length === 0) { %>
+            <tr><td colspan="4" class="text-center text-muted">Không có dữ liệu</td></tr>
+          <% } else { statsRows.forEach((r, i) => { %>
             <tr>
-              <td><%= m._id.m %>/<%= m._id.y %></td>
-              <td><%= m.total.toLocaleString('vi-VN') %></td>
+              <td><%= i+1 %></td>
+              <td><%= r.key %></td>
+              <td><%= r.count %></td>
+              <td><%= Number(r.total || 0).toLocaleString('vi-VN') %></td>
             </tr>
-          <% }) %>
-          </tbody>
-        </table>
-      </div>
+          <% }) } %>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
 <%- include('partials/footer') %>
+
+<script>
+  // Thay đổi input[type] tương ứng với range selection
+  (function () {
+    const rangeSelect = document.getElementById('rangeSelect');
+    const dateInput = document.getElementById('dateInput');
+
+    function setInputType(range, currentVal) {
+      if (!dateInput) return;
+      if (range === 'day') {
+        dateInput.type = 'date';
+        dateInput.removeAttribute('min');
+        dateInput.removeAttribute('max');
+      } else if (range === 'month') {
+        // use month if supported
+        try { dateInput.type = 'month'; } catch (e) { dateInput.type = 'text'; }
+        dateInput.removeAttribute('min');
+        dateInput.removeAttribute('max');
+      } else {
+        dateInput.type = 'number';
+        dateInput.min = 2000;
+        dateInput.max = 2100;
+      }
+    }
+
+    // init
+    setInputType(rangeSelect.value, dateInput.value);
+
+    rangeSelect.addEventListener('change', function () {
+      setInputType(rangeSelect.value, dateInput.value);
+      dateInput.value = '';
+    });
+  })();
+</script>

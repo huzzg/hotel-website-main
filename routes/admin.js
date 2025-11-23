@@ -59,36 +59,140 @@ function parsePriceInput(raw) {
   return Number.isFinite(n) ? n : null;
 }
 
+// ---------- Helper: build aggregation pipeline for stats ----------
+/**
+ * buildAggregation(range, dateStr)
+ * - range: 'day' | 'month' | 'year'
+ * - dateStr: optional filter value (day: 'YYYY-MM-DD', month: 'YYYY-MM', year: 'YYYY')
+ *
+ * By default the pipeline groups by Booking.createdAt and sums Booking.totalPrice.
+ * If you want to base on payment time, replace dateField with '$paidAt' or payment field.
+ */
+function buildAggregation(range, dateStr) {
+  const dateField = '$createdAt'; // change to payment date if desired
+  const match = {};
+
+  // Optionally count only paid bookings (recommended)
+  match.status = 'paid';
+
+  // If dateStr provided, build a range filter on createdAt
+  if (dateStr) {
+    if (range === 'day') {
+      const start = new Date(dateStr + 'T00:00:00.000Z');
+      const end = new Date(dateStr + 'T23:59:59.999Z');
+      match.createdAt = { $gte: start, $lte: end };
+    } else if (range === 'month') {
+      const parts = dateStr.split('-');
+      if (parts.length === 2) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+        // end of month:
+        const end = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+        match.createdAt = { $gte: start, $lte: end };
+      }
+    } else if (range === 'year') {
+      const year = parseInt(dateStr, 10);
+      if (!Number.isNaN(year)) {
+        const start = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+        const end = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+        match.createdAt = { $gte: start, $lte: end };
+      }
+    }
+  }
+
+  const pipeline = [];
+
+  // Apply match if any
+  if (Object.keys(match).length) pipeline.push({ $match: match });
+
+  // Ensure totalPrice exists and is number
+  pipeline.push({ $match: { totalPrice: { $exists: true } } });
+
+  // Project only fields we need (optional)
+  pipeline.push({
+    $project: {
+      totalPrice: 1,
+      createdAt: 1
+    }
+  });
+
+  // Group depending on range
+  if (range === 'day') {
+    pipeline.push({
+      $group: {
+        _id: { day: { $dateToString: { format: "%Y-%m-%d", date: dateField } } },
+        total: { $sum: { $ifNull: ["$totalPrice", 0] } },
+        count: { $sum: 1 }
+      }
+    });
+    pipeline.push({ $sort: { "_id.day": -1 } });
+  } else if (range === 'month') {
+    pipeline.push({
+      $group: {
+        _id: { month: { $dateToString: { format: "%Y-%m", date: dateField } } },
+        total: { $sum: { $ifNull: ["$totalPrice", 0] } },
+        count: { $sum: 1 }
+      }
+    });
+    pipeline.push({ $sort: { "_id.month": -1 } });
+  } else { // year
+    pipeline.push({
+      $group: {
+        _id: { year: { $dateToString: { format: "%Y", date: dateField } } },
+        total: { $sum: { $ifNull: ["$totalPrice", 0] } },
+        count: { $sum: 1 }
+      }
+    });
+    pipeline.push({ $sort: { "_id.year": -1 } });
+  }
+
+  return pipeline;
+}
+
 // ========== DASHBOARD ==========
+// Replaced old dashboard handler with flexible day/month/year stats.
+// Route: GET /admin/dashboard?range=month&date=2025-11
 router.get('/dashboard', async (req, res, next) => {
   try {
-    const [users, rooms, bookings, paidAgg] = await Promise.all([
+    const range = (req.query.range || 'month').toLowerCase(); // day|month|year
+    const date = req.query.date || null; // format depends on range
+
+    // Basic counts
+    const [usersCount, roomsCount, bookingsCount] = await Promise.all([
       User.countDocuments({}),
       Room.countDocuments({}),
-      Booking.countDocuments({}),
-      Payment.aggregate([
-        { $match: { status: 'paid' } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
-      ]).catch(() => [])
+      Booking.countDocuments({})
     ]);
 
-    const revenue = paidAgg && paidAgg.length ? paidAgg[0].total : 0;
-
-    const monthly = await Payment.aggregate([
-      { $match: { status: 'paid' } },
-      {
-        $group: {
-          _id: { y: { $year: '$createdAt' }, m: { $month: '$createdAt' } },
-          total: { $sum: '$amount' }
-        }
-      },
-      { $sort: { '_id.y': 1, '_id.m': 1 } }
+    // Total revenue: sum totalPrice for paid bookings (recommended)
+    const revenueAgg = await Booking.aggregate([
+      { $match: { status: 'paid', totalPrice: { $exists: true } } },
+      { $group: { _id: null, total: { $sum: '$totalPrice' } } }
     ]).catch(() => []);
 
-    res.render('admin-dashboard', {
+    const totalRevenue = (revenueAgg && revenueAgg.length) ? revenueAgg[0].total : 0;
+
+    // Build pipeline and run aggregation on Bookings
+    const pipeline = buildAggregation(range, date);
+    const stats = await Booking.aggregate(pipeline).catch(() => []);
+
+    // Transform stats into rows for view
+    const rows = stats.map(item => {
+      const keyObj = item._id || {};
+      const key = keyObj.day || keyObj.month || keyObj.year || '/';
+      return { key, total: item.total || 0, count: item.count || 0 };
+    });
+
+    return res.render('admin-dashboard', {
       title: 'Admin • Dashboard',
-      stat: { users, rooms, bookings, revenue },
-      monthly
+      usersCount,
+      roomsCount,
+      bookingsCount,
+      totalRevenue,
+      statsRows: rows,
+      selectedRange: range,
+      selectedDate: date || ''
     });
   } catch (err) {
     next(err);
